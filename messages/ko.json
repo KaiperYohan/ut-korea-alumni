@@ -1,0 +1,111 @@
+{
+  "nav": {
+    "home": "홈",
+    "members": "회원",
+    "events": "행사",
+    "news": "소식",
+    "about": "소개",
+    "login": "로그인",
+    "signup": "가입하기",
+    "signout": "로그아웃",
+    "admin": "관리자"
+  },
+  "hero": {
+    "badge": "UT Austin 한국 동문회",
+    "title": "Hook 'em, Horns!",
+    "subtitle": "한국에서 텍사스 대학교 오스틴 동문들을 연결합니다 — 커뮤니티를 만들고, 기회를 나누며, UT Austin 정신을 함께 기념합니다.",
+    "joinBtn": "동문 네트워크 가입",
+    "eventsBtn": "다가오는 행사"
+  },
+  "stats": {
+    "members": "회원",
+    "events": "개최 행사",
+    "years": "활동 연수"
+  },
+  "events": {
+    "title": "다가오는 행사",
+    "subtitle": "동문 모임에서 함께 만나요",
+    "viewAll": "전체 행사 보기",
+    "noEvents": "예정된 행사가 없습니다. 곧 다시 확인해 주세요!",
+    "rsvp": "참석 신청",
+    "attending": "참석 예정",
+    "attendees": "명 참석",
+    "pastEvents": "지난 행사",
+    "details": "상세 보기",
+    "date": "날짜",
+    "location": "장소",
+    "time": "시간"
+  },
+  "news": {
+    "title": "최근 소식",
+    "subtitle": "동문 커뮤니티의 최신 소식",
+    "viewAll": "전체 소식 보기",
+    "noNews": "아직 소식이 없습니다.",
+    "readMore": "더 읽기",
+    "by": "작성자",
+    "published": "게시일"
+  },
+  "members": {
+    "title": "회원 명부",
+    "subtitle": "한국의 UT Austin 동문을 찾고 연결하세요",
+    "search": "이름, 전공, 회사로 검색...",
+    "filterYear": "졸업 연도",
+    "filterLocation": "지역",
+    "allYears": "전체 연도",
+    "allLocations": "전체 지역",
+    "noMembers": "검색 결과가 없습니다.",
+    "class": "졸업",
+    "location": "지역",
+    "company": "직장"
+  },
+  "auth": {
+    "loginTitle": "돌아오신 것을 환영합니다",
+    "loginSubtitle": "동문 계정으로 로그인하세요",
+    "signupTitle": "네트워크에 가입하세요",
+    "signupSubtitle": "동문 프로필을 만드세요",
+    "email": "이메일",
+    "password": "비밀번호",
+    "confirmPassword": "비밀번호 확인",
+    "name": "이름 (영문)",
+    "nameKo": "이름 (한글)",
+    "gradYear": "졸업 연도",
+    "major": "전공 / 학과",
+    "location": "현재 거주 도시",
+    "company": "직장",
+    "jobTitle": "직함",
+    "bio": "간단한 소개",
+    "loginBtn": "로그인",
+    "signupBtn": "계정 만들기",
+    "noAccount": "계정이 없으신가요?",
+    "hasAccount": "이미 계정이 있으신가요?",
+    "pendingApproval": "관리자 승인 대기 중입니다. 승인 후 접근 가능합니다.",
+    "errors": {
+      "invalid": "이메일 또는 비밀번호가 올바르지 않습니다",
+      "exists": "이미 등록된 이메일입니다",
+      "mismatch": "비밀번호가 일치하지 않습니다",
+      "required": "필수 항목을 모두 입력해 주세요"
+    }
+  },
+  "footer": {
+    "tagline": "2010년부터 한국의 UT Austin 동문을 연결합니다",
+    "quickLinks": "바로가기",
+    "contact": "연락처",
+    "followUs": "팔로우",
+    "rights": "All rights reserved.",
+    "univ": "The University of Texas at Austin"
+  },
+  "about": {
+    "title": "소개",
+    "subtitle": "텍사스 대학교 오스틴 한국 동문회"
+  },
+  "common": {
+    "loading": "로딩 중...",
+    "error": "문제가 발생했습니다",
+    "save": "저장",
+    "cancel": "취소",
+    "delete": "삭제",
+    "edit": "수정",
+    "create": "만들기",
+    "back": "뒤로"
+  }
+}

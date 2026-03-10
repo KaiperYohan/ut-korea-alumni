@@ -1,0 +1,111 @@
+{
+  "nav": {
+    "home": "Home",
+    "members": "Members",
+    "events": "Events",
+    "news": "News",
+    "about": "About",
+    "login": "Sign In",
+    "signup": "Join Us",
+    "signout": "Sign Out",
+    "admin": "Admin"
+  },
+  "hero": {
+    "badge": "UT Austin Korea Alumni",
+    "title": "Hook 'em, Horns!",
+    "subtitle": "Connecting Longhorns across Korea — building community, sharing opportunities, and celebrating the UT Austin spirit together.",
+    "joinBtn": "Join Our Network",
+    "eventsBtn": "Upcoming Events"
+  },
+  "stats": {
+    "members": "Members",
+    "events": "Events Held",
+    "years": "Years Active"
+  },
+  "events": {
+    "title": "Upcoming Events",
+    "subtitle": "Connect with fellow Longhorns at our next gathering",
+    "viewAll": "View All Events",
+    "noEvents": "No upcoming events. Check back soon!",
+    "rsvp": "RSVP",
+    "attending": "Attending",
+    "attendees": "attendees",
+    "pastEvents": "Past Events",
+    "details": "Details",
+    "date": "Date",
+    "location": "Location",
+    "time": "Time"
+  },
+  "news": {
+    "title": "Latest News",
+    "subtitle": "Stay updated with the alumni community",
+    "viewAll": "View All News",
+    "noNews": "No news articles yet.",
+    "readMore": "Read More",
+    "by": "By",
+    "published": "Published"
+  },
+  "members": {
+    "title": "Member Directory",
+    "subtitle": "Find and connect with fellow UT Austin alumni in Korea",
+    "search": "Search by name, major, or company...",
+    "filterYear": "Graduation Year",
+    "filterLocation": "Location",
+    "allYears": "All Years",
+    "allLocations": "All Locations",
+    "noMembers": "No members found matching your search.",
+    "class": "Class of",
+    "location": "Location",
+    "company": "Company"
+  },
+  "auth": {
+    "loginTitle": "Welcome Back",
+    "loginSubtitle": "Sign in to your alumni account",
+    "signupTitle": "Join the Network",
+    "signupSubtitle": "Create your alumni profile",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "name": "Full Name (English)",
+    "nameKo": "Full Name (Korean)",
+    "gradYear": "Graduation Year",
+    "major": "Major / Department",
+    "location": "Current City",
+    "company": "Company",
+    "jobTitle": "Job Title",
+    "bio": "Short Bio",
+    "loginBtn": "Sign In",
+    "signupBtn": "Create Account",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "pendingApproval": "Your account is pending admin approval. You'll receive access once approved.",
+    "errors": {
+      "invalid": "Invalid email or password",
+      "exists": "An account with this email already exists",
+      "mismatch": "Passwords do not match",
+      "required": "Please fill in all required fields"
+    }
+  },
+  "footer": {
+    "tagline": "Connecting UT Austin Longhorns in Korea since 2010",
+    "quickLinks": "Quick Links",
+    "contact": "Contact",
+    "followUs": "Follow Us",
+    "rights": "All rights reserved.",
+    "univ": "The University of Texas at Austin"
+  },
+  "about": {
+    "title": "About Us",
+    "subtitle": "The University of Texas at Austin Korea Alumni Association"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "back": "Back"
+  }
+}
