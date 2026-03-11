@@ -2,7 +2,10 @@ import { sql } from '@/lib/db'
 
 export async function GET(request) {
   const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.ADMIN_SECRET}`) {
+  const authQuery = request.nextUrl.searchParams.get('Authorization')
+  const isAuthorized = authHeader === `Bearer ${process.env.ADMIN_SECRET}` || authQuery === `Bearer ${process.env.ADMIN_SECRET}`
+
+  if (!isAuthorized) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
