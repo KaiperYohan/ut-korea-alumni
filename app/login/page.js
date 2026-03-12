@@ -28,7 +28,11 @@ export default function LoginPage() {
     setLoading(false)
 
     if (result?.error) {
-      setError(t('auth.errors.invalid'))
+      if (result.error.includes('EMAIL_NOT_VERIFIED')) {
+        setError(t('auth.errors.emailNotVerified'))
+      } else {
+        setError(t('auth.errors.invalid'))
+      }
     } else {
       router.push('/members')
       router.refresh()

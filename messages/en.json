@@ -84,8 +84,26 @@
       "invalid": "Invalid email or password",
       "exists": "An account with this email already exists",
       "mismatch": "Passwords do not match",
-      "required": "Please fill in all required fields"
+      "required": "Please fill in all required fields",
+      "emailNotVerified": "Please verify your email before signing in. Check your inbox for the verification link."
     }
+  },
+  "verify": {
+    "verifying": "Verifying your email...",
+    "successTitle": "Email Verified!",
+    "successMessage": "Your email has been verified. You can now sign in to your account.",
+    "alreadyTitle": "Already Verified",
+    "alreadyMessage": "Your email has already been verified. You can sign in.",
+    "expiredTitle": "Link Expired",
+    "expiredMessage": "This verification link has expired. Please request a new one below.",
+    "errorTitle": "Verification Failed",
+    "errorMessage": "This verification link is invalid. Please request a new one below.",
+    "noToken": "No verification token found. Please use the link from your email.",
+    "resendPrompt": "Need a new verification email?",
+    "resendBtn": "Resend Verification Email",
+    "resendSuccess": "Verification email sent! Check your inbox.",
+    "checkEmail": "Check Your Email",
+    "checkEmailMessage": "We've sent a verification link to your email address. Please verify your email to continue."
   },
   "footer": {
     "tagline": "Connecting UT Austin Longhorns in Korea since 2010",

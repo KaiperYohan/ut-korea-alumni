@@ -1,5 +1,7 @@
 import { sql } from '@/lib/db'
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
+import { sendVerificationEmail } from '@/lib/email'
 
 export async function POST(request) {
   try {
@@ -21,14 +23,24 @@ export async function POST(request) {
     }
 
     const passwordHash = await bcrypt.hash(password, 12)
+    const verificationToken = crypto.randomBytes(32).toString('hex')
+    const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
     const { rows } = await sql`
-      INSERT INTO members (email, password_hash, name, name_ko, graduation_year, major, location, company, title, bio)
-      VALUES (${email}, ${passwordHash}, ${name}, ${nameKo || null}, ${graduationYear ? parseInt(graduationYear) : null}, ${major || null}, ${location || null}, ${company || null}, ${title || null}, ${bio || null})
+      INSERT INTO members (email, password_hash, name, name_ko, graduation_year, major, location, company, title, bio, email_verified, verification_token, verification_token_expires)
+      VALUES (${email}, ${passwordHash}, ${name}, ${nameKo || null}, ${graduationYear ? parseInt(graduationYear) : null}, ${major || null}, ${location || null}, ${company || null}, ${title || null}, ${bio || null}, false, ${verificationToken}, ${tokenExpires.toISOString()})
       RETURNING id, email, name
     `
 
-    return Response.json({ success: true, user: rows[0], message: 'Account created. Pending admin approval.' })
+    // Send verification email
+    try {
+      await sendVerificationEmail(email, verificationToken, name)
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError)
+      // Account is created but email failed — they can request a resend
+    }
+
+    return Response.json({ success: true, user: rows[0], message: 'Account created. Please check your email to verify.' })
   } catch (error) {
     console.error('Signup error:', error)
     return Response.json({ error: 'Something went wrong' }, { status: 500 })

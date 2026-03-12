@@ -27,10 +27,18 @@ export async function GET(request) {
         profile_image_url TEXT,
         is_admin BOOLEAN DEFAULT false,
         is_approved BOOLEAN DEFAULT false,
+        email_verified BOOLEAN DEFAULT false,
+        verification_token VARCHAR(255),
+        verification_token_expires TIMESTAMP,
         created_at TIMESTAMP DEFAULT NOW(),
         last_login TIMESTAMP
       )
     `
+
+    // Add email verification columns to existing tables
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT false`
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255)`
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS verification_token_expires TIMESTAMP`
 
     // Events table
     await sql`
