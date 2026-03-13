@@ -18,8 +18,12 @@ function MemberCard({ member, t }) {
   return (
     <div className="card p-6 flex items-start gap-4">
       {/* Avatar */}
-      <div className={`shrink-0 w-14 h-14 rounded-full bg-gradient-to-br ${level.avatar} flex items-center justify-center text-white font-display font-bold text-lg`}>
-        {initials}
+      <div className={`shrink-0 w-14 h-14 rounded-full bg-gradient-to-br ${level.avatar} flex items-center justify-center text-white font-display font-bold text-lg overflow-hidden`}>
+        {member.profile_image_url ? (
+          <img src={member.profile_image_url} alt={member.name} className="w-full h-full object-cover" />
+        ) : (
+          initials
+        )}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">

@@ -17,6 +17,10 @@ export default function ProfilePage() {
   const [passwordMessage, setPasswordMessage] = useState('')
   const [passwordError, setPasswordError] = useState('')
 
+  const [profileImage, setProfileImage] = useState(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const fileInputRef = useRef(null)
+
   const [form, setForm] = useState({
     name: '', nameKo: '', graduationYear: '', major: '',
     location: '', company: '', title: '', birthday: '', bio: ''
@@ -49,6 +53,7 @@ export default function ProfilePage() {
             birthday: data.birthday || '',
             bio: data.bio || '',
           })
+          setProfileImage(data.profileImageUrl || null)
           setLoading(false)
         })
         .catch(() => {
@@ -57,6 +62,40 @@ export default function ProfilePage() {
         })
     }
   }, [status, router])
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingImage(true)
+    setError('')
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/profile/image', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || t('profile.errors.updateFailed'))
+      } else {
+        setProfileImage(data.url)
+      }
+    } catch {
+      setError(t('profile.errors.updateFailed'))
+    }
+    setUploadingImage(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleImageRemove = async () => {
+    setUploadingImage(true)
+    try {
+      await fetch('/api/profile/image', { method: 'DELETE' })
+      setProfileImage(null)
+    } catch {
+      setError(t('profile.errors.updateFailed'))
+    }
+    setUploadingImage(false)
+  }
 
   const update = (field) => (e) => setForm(prev => ({ ...prev, [field]: e.target.value }))
   const updatePassword = (field) => (e) => setPasswordForm(prev => ({ ...prev, [field]: e.target.value }))
@@ -149,6 +188,44 @@ export default function ProfilePage() {
           <h1 className="font-display text-3xl font-bold text-charcoal">{t('profile.title')}</h1>
           <p className="text-charcoal-light mt-2">{t('profile.subtitle')}</p>
           <p className="text-sm text-charcoal-light mt-1">{session?.user?.email}</p>
+        </div>
+
+        {/* Profile Photo */}
+        <div className="card p-8 mb-8">
+          <h2 className="font-display text-xl font-bold text-charcoal mb-6">{t('profile.profilePhoto')}</h2>
+          <div className="flex items-center gap-6">
+            <div className="shrink-0 w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-burnt-orange to-gold flex items-center justify-center">
+              {profileImage ? (
+                <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-white font-display font-bold text-2xl">
+                  {form.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?'}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageUpload} className="hidden" />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingImage}
+                className="btn-primary !py-2 !px-4 !text-sm disabled:opacity-60"
+              >
+                {uploadingImage ? t('common.loading') : t('profile.uploadPhoto')}
+              </button>
+              {profileImage && (
+                <button
+                  type="button"
+                  onClick={handleImageRemove}
+                  disabled={uploadingImage}
+                  className="text-sm text-red-600 hover:text-red-700 font-medium disabled:opacity-60"
+                >
+                  {t('profile.removePhoto')}
+                </button>
+              )}
+              <p className="text-xs text-charcoal-light">{t('profile.photoHint')}</p>
+            </div>
+          </div>
         </div>
 
         {/* Profile Form */}
