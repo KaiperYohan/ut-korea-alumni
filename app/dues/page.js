@@ -19,7 +19,7 @@ export default function DuesPage() {
         <div className="card p-6 md:p-8 mb-6">
           <h2 className="font-display text-xl font-semibold text-charcoal mb-4">{t('dues.benefitsTitle')}</h2>
           <ul className="space-y-3">
-            {['benefit1', 'benefit2', 'benefit3'].map(key => (
+            {['benefit1', 'benefit2', 'benefit3', 'benefit4'].map(key => (
               <li key={key} className="flex items-start gap-3">
                 <svg className="w-5 h-5 text-burnt-orange shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
