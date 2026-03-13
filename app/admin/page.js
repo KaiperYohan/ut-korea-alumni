@@ -115,6 +115,27 @@ export default function AdminPage() {
     fetchAll()
   }
 
+  const [scraping, setScraping] = useState(false)
+  const [scrapeResult, setScrapeResult] = useState(null)
+
+  const handleScrape = async () => {
+    setScraping(true)
+    setScrapeResult(null)
+    try {
+      const res = await fetch('/api/admin/scrape-news', { method: 'POST' })
+      const data = await res.json()
+      if (res.ok) {
+        setScrapeResult(`Imported ${data.imported} articles, skipped ${data.skipped} duplicates.`)
+        fetchAll()
+      } else {
+        setScrapeResult(`Error: ${data.error}`)
+      }
+    } catch {
+      setScrapeResult('Failed to sync.')
+    }
+    setScraping(false)
+  }
+
   const handleDeleteNews = async (id) => {
     if (!confirm('Delete this article?')) return
     await fetch(`/api/news/${id}`, { method: 'DELETE' })
@@ -374,6 +395,26 @@ export default function AdminPage() {
         {/* News Tab */}
         {activeTab === 'news' && (
           <div>
+            {/* Sync from SXSK */}
+            <div className="card p-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1">
+                <h4 className="font-semibold text-charcoal text-sm">Sync from SXSK.news</h4>
+                <p className="text-xs text-charcoal-light mt-0.5">Import articles from the sxsk.news RSS feed (English + Korean)</p>
+              </div>
+              <button
+                onClick={handleScrape}
+                disabled={scraping}
+                className="px-4 py-2 bg-burnt-orange text-white text-xs font-semibold rounded-lg cursor-pointer border-none hover:bg-burnt-orange/90 disabled:opacity-50 whitespace-nowrap"
+              >
+                {scraping ? 'Syncing...' : 'Sync Now'}
+              </button>
+            </div>
+            {scrapeResult && (
+              <div className={`mb-6 px-4 py-2 rounded-lg text-sm ${scrapeResult.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                {scrapeResult}
+              </div>
+            )}
+
             {/* News form */}
             <form onSubmit={handleNewsSubmit} className="card p-6 mb-8 space-y-4">
               <h3 className="font-display text-lg font-semibold text-charcoal">{editingNews ? 'Edit Article' : 'Create News Article'}</h3>
