@@ -47,6 +47,9 @@ export async function GET(request) {
     // Add birthday column (MMDD format for annual matching)
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS birthday VARCHAR(6)`
 
+    // Add phone number column
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS phone VARCHAR(20)`
+
     // Add password reset columns
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS password_reset_token VARCHAR(255)`
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS password_reset_token_expires TIMESTAMP`

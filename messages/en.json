@@ -98,6 +98,11 @@
     "company": "Company",
     "noAccess": "Directory access requires Full or Executive membership."
   },
+  "memberDetail": {
+    "phone": "Phone",
+    "phonePlaceholder": "010-1234-5678",
+    "contactInfo": "Contact Information"
+  },
   "auth": {
     "loginTitle": "Welcome Back",
     "loginSubtitle": "Sign in to your alumni account",

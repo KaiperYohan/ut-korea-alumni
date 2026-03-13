@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useT } from '../components/LanguageProvider'
 
 function MemberCard({ member, t }) {
@@ -16,7 +17,7 @@ function MemberCard({ member, t }) {
   const level = levelStyles[member.membership_level] || levelStyles.general
 
   return (
-    <div className="card p-6 flex items-start gap-4">
+    <Link href={`/members/${member.id}`} className="card p-6 flex items-start gap-4 no-underline group cursor-pointer hover:border-burnt-orange/30 transition-colors">
       {/* Avatar */}
       <div className={`shrink-0 w-14 h-14 rounded-full bg-gradient-to-br ${level.avatar} flex items-center justify-center text-white font-display font-bold text-lg overflow-hidden`}>
         {member.profile_image_url ? (
@@ -27,7 +28,7 @@ function MemberCard({ member, t }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <h3 className="font-display text-base font-semibold text-charcoal truncate">
+          <h3 className="font-display text-base font-semibold text-charcoal group-hover:text-burnt-orange transition-colors truncate">
             {member.name}
             {member.name_ko && <span className="text-charcoal-light font-body font-normal ml-1.5 text-sm">({member.name_ko})</span>}
           </h3>
@@ -56,7 +57,7 @@ function MemberCard({ member, t }) {
           )}
         </div>
       </div>
-    </div>
+    </Link>
   )
 }
 

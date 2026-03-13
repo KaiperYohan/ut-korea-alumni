@@ -9,7 +9,7 @@ export async function GET() {
   }
 
   const { rows } = await sql`
-    SELECT id, email, name, name_ko, graduation_year, major, location, company, title, bio, birthday, profile_image_url, membership_level
+    SELECT id, email, name, name_ko, graduation_year, major, location, company, title, bio, birthday, phone, profile_image_url, membership_level
     FROM members WHERE id = ${session.user.id}
   `
 
@@ -30,6 +30,7 @@ export async function GET() {
     bio: user.bio,
     profileImageUrl: user.profile_image_url,
     birthday: user.birthday,
+    phone: user.phone,
   })
 }
 
@@ -40,7 +41,7 @@ export async function PUT(request) {
   }
 
   const body = await request.json()
-  const { name, nameKo, graduationYear, major, location, company, title, bio, birthday } = body
+  const { name, nameKo, graduationYear, major, location, company, title, bio, birthday, phone } = body
 
   if (!name?.trim()) {
     return Response.json({ error: 'Name is required' }, { status: 400 })
@@ -56,7 +57,8 @@ export async function PUT(request) {
       company = ${company?.trim() || null},
       title = ${title?.trim() || null},
       bio = ${bio?.trim() || null},
-      birthday = ${birthday?.trim() || null}
+      birthday = ${birthday?.trim() || null},
+      phone = ${phone?.trim() || null}
     WHERE id = ${session.user.id}
   `
 
