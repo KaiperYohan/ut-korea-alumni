@@ -8,7 +8,7 @@ export const metadata = {
   title: 'UT Austin Korea Alumni Association',
   description: 'Connecting University of Texas at Austin Longhorns in Korea — 텍사스 대학교 오스틴 한국 동문회',
   icons: {
-    icon: '/favicon.ico',
+    icon: '/icon.svg',
   },
 }
 
