@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useT, useLanguage } from '../components/LanguageProvider'
 
 const CATEGORIES = ['news', 'members_news', 'pr']
-const SUBCATEGORIES = ['marriage', 'birth', 'death', 'promotion', 'job_change', 'seeking_employment']
+const SUBCATEGORIES = ['marriage', 'birth', 'death', 'promotion', 'job_change', 'seeking_employment', 'birthday']
 
 export default function NewsPage() {
   const t = useT()
