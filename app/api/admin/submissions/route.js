@@ -8,13 +8,13 @@ export async function GET() {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Return ALL news (including unpublished/pending) for admin
   const { rows } = await sql`
-    SELECT n.*, m.name as author_name
+    SELECT n.*, m.name as author_name, m.email as author_email
     FROM news n
     LEFT JOIN members m ON n.author_id = m.id
+    WHERE n.approval_status = 'pending'
     ORDER BY n.created_at DESC
   `
 
-  return Response.json({ articles: rows })
+  return Response.json({ submissions: rows })
 }

@@ -31,12 +31,16 @@ export default function Navbar() {
   const textColor = scrolled || !isHome ? 'text-charcoal' : 'text-white'
   const logoColor = scrolled || !isHome ? 'text-burnt-orange' : 'text-white'
 
+  const membershipLevel = session?.user?.membershipLevel
+  const canWrite = ['executive', 'full'].includes(membershipLevel) || session?.user?.isAdmin
+
   const navLinks = [
     { href: '/', label: t('nav.home') },
     { href: '/events', label: t('nav.events') },
     { href: '/news', label: t('nav.news') },
     { href: '/members', label: t('nav.members'), auth: true },
     { href: '/about', label: t('nav.about') },
+    ...(canWrite ? [{ href: '/submit', label: t('nav.submit') }] : []),
     ...(session?.user?.isAdmin ? [{ href: '/admin', label: t('nav.admin') }] : []),
   ].filter(link => !link.auth || session)
 
@@ -93,6 +97,18 @@ export default function Navbar() {
             </button>
             {session ? (
               <div className="flex items-center gap-1">
+                {canWrite && (
+                  <Link
+                    href="/my-posts"
+                    className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${
+                      isActive('/my-posts')
+                        ? 'bg-burnt-orange/10 text-burnt-orange'
+                        : `${textColor} hover:bg-burnt-orange/5 hover:text-burnt-orange`
+                    }`}
+                  >
+                    {t('nav.myPosts')}
+                  </Link>
+                )}
                 <Link
                   href="/profile"
                   className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${
@@ -152,6 +168,18 @@ export default function Navbar() {
               </Link>
             ))}
             <hr className="border-charcoal/10 my-3" />
+            {session && canWrite && (
+              <Link
+                href="/my-posts"
+                className={`block px-4 py-2.5 rounded-lg text-sm font-medium no-underline ${
+                  isActive('/my-posts')
+                    ? 'bg-burnt-orange/10 text-burnt-orange'
+                    : 'text-charcoal hover:bg-cream-light'
+                }`}
+              >
+                {t('nav.myPosts')}
+              </Link>
+            )}
             {session && (
               <Link
                 href="/profile"

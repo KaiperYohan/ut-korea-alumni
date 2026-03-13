@@ -47,6 +47,12 @@ export async function GET(request) {
     // Auto-verify existing approved members so they aren't locked out
     await sql`UPDATE members SET email_verified = true WHERE is_approved = true AND email_verified = false`
 
+    // Add news category and approval columns
+    await sql`ALTER TABLE news ADD COLUMN IF NOT EXISTS category VARCHAR(20) DEFAULT 'news'`
+    await sql`ALTER TABLE news ADD COLUMN IF NOT EXISTS subcategory VARCHAR(30)`
+    await sql`ALTER TABLE news ADD COLUMN IF NOT EXISTS approval_status VARCHAR(20) DEFAULT 'approved'`
+    await sql`ALTER TABLE news ADD COLUMN IF NOT EXISTS external_url TEXT`
+
     // Events table
     await sql`
       CREATE TABLE IF NOT EXISTS events (

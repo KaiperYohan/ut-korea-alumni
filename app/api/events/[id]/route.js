@@ -31,11 +31,23 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.isAdmin) {
+  if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const { id } = await params
+
+  const { rows: existing } = await sql`SELECT created_by FROM events WHERE id = ${parseInt(id)}`
+  if (existing.length === 0) {
+    return Response.json({ error: 'Event not found' }, { status: 404 })
+  }
+
+  const isAdmin = session.user.isAdmin
+  const isCreator = String(existing[0].created_by) === String(session.user.id)
+  if (!isAdmin && !isCreator) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const body = await request.json()
   const { title, titleKo, description, descriptionKo, eventDate, endDate, location, locationKo, imageUrl, maxAttendees } = body
 
@@ -54,11 +66,23 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.isAdmin) {
+  if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const { id } = await params
+
+  const { rows: existing } = await sql`SELECT created_by FROM events WHERE id = ${parseInt(id)}`
+  if (existing.length === 0) {
+    return Response.json({ error: 'Event not found' }, { status: 404 })
+  }
+
+  const isAdmin = session.user.isAdmin
+  const isCreator = String(existing[0].created_by) === String(session.user.id)
+  if (!isAdmin && !isCreator) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   await sql`DELETE FROM events WHERE id = ${parseInt(id)}`
   return Response.json({ success: true })
 }

@@ -1,11 +1,17 @@
 import { sql } from '@/lib/db'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { canAccessDirectory } from '@/lib/permissions'
 
 export async function GET(request) {
   const session = await getServerSession(authOptions)
   if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Only executive and full members can access the directory
+  if (!canAccessDirectory(session.user.membershipLevel) && !session.user.isAdmin) {
+    return Response.json({ error: 'Directory access requires Full or Executive membership' }, { status: 403 })
   }
 
   const { searchParams } = new URL(request.url)

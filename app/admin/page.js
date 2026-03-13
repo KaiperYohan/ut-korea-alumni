@@ -3,14 +3,17 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { useT } from '../components/LanguageProvider'
 
 export default function AdminPage() {
+  const t = useT()
   const { data: session, status } = useSession()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('dashboard')
   const [members, setMembers] = useState([])
   const [events, setEvents] = useState([])
   const [articles, setArticles] = useState([])
+  const [submissions, setSubmissions] = useState([])
   const [loading, setLoading] = useState(true)
 
   // Event form state
@@ -18,7 +21,7 @@ export default function AdminPage() {
   const [editingEvent, setEditingEvent] = useState(null)
 
   // News form state
-  const [newsForm, setNewsForm] = useState({ title: '', titleKo: '', content: '', contentKo: '', published: false })
+  const [newsForm, setNewsForm] = useState({ title: '', titleKo: '', content: '', contentKo: '', published: false, category: 'news', externalUrl: '' })
   const [editingNews, setEditingNews] = useState(null)
 
   useEffect(() => {
@@ -28,19 +31,22 @@ export default function AdminPage() {
 
   const fetchAll = async () => {
     setLoading(true)
-    const [membersRes, eventsRes, newsRes] = await Promise.all([
+    const [membersRes, eventsRes, newsRes, subsRes] = await Promise.all([
       fetch('/api/admin/members'),
       fetch('/api/events'),
       fetch('/api/admin/news'),
+      fetch('/api/admin/submissions'),
     ])
-    const [membersData, eventsData, newsData] = await Promise.all([
+    const [membersData, eventsData, newsData, subsData] = await Promise.all([
       membersRes.json(),
       eventsRes.json(),
       newsRes.json(),
+      subsRes.json(),
     ])
     setMembers(membersData.members || [])
     setEvents(eventsData.events || [])
     setArticles(newsData.articles || [])
+    setSubmissions(subsData.submissions || [])
     setLoading(false)
   }
 
@@ -87,7 +93,7 @@ export default function AdminPage() {
     const url = editingNews ? `/api/news/${editingNews}` : '/api/news'
     const method = editingNews ? 'PUT' : 'POST'
     await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newsForm) })
-    setNewsForm({ title: '', titleKo: '', content: '', contentKo: '', published: false })
+    setNewsForm({ title: '', titleKo: '', content: '', contentKo: '', published: false, category: 'news', externalUrl: '' })
     setEditingNews(null)
     fetchAll()
   }
@@ -96,8 +102,17 @@ export default function AdminPage() {
     setEditingNews(article.id)
     setNewsForm({
       title: article.title, titleKo: article.title_ko || '', content: article.content, contentKo: article.content_ko || '',
-      published: article.published,
+      published: article.published, category: article.category || 'news', externalUrl: article.external_url || '',
     })
+  }
+
+  const handleSubmissionAction = async (id, action) => {
+    await fetch(`/api/admin/submissions/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action }),
+    })
+    fetchAll()
   }
 
   const handleDeleteNews = async (id) => {
@@ -118,9 +133,12 @@ export default function AdminPage() {
   const generalCount = members.filter(m => !m.membership_level || m.membership_level === 'general').length
   const inputClass = "w-full px-3 py-2 rounded-lg border border-charcoal/15 bg-white text-charcoal text-sm focus:outline-none focus:ring-2 focus:ring-burnt-orange/30 focus:border-burnt-orange"
 
+  const pendingSubmissions = submissions.length
+
   const tabs = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'members', label: `Members ${pendingCount > 0 ? `(${pendingCount})` : ''}` },
+    { id: 'submissions', label: `Submissions ${pendingSubmissions > 0 ? `(${pendingSubmissions})` : ''}` },
     { id: 'events', label: 'Events' },
     { id: 'news', label: 'News' },
   ]
@@ -167,6 +185,12 @@ export default function AdminPage() {
               <div className="font-display text-3xl font-bold text-burnt-orange">{articles.length}</div>
               <div className="text-sm text-charcoal-light mt-1">News Articles</div>
             </div>
+            {pendingSubmissions > 0 && (
+              <div className="card p-6 text-center border-amber-300 bg-amber-50/30">
+                <div className="font-display text-3xl font-bold text-amber-600">{pendingSubmissions}</div>
+                <div className="text-sm text-charcoal-light mt-1">Pending Submissions</div>
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-3 gap-5 mt-5">
             <div className="card p-5 text-center">
@@ -230,6 +254,43 @@ export default function AdminPage() {
                     <button onClick={() => handleMemberAction(member.id, 'remove_admin')} className="px-3 py-1.5 bg-charcoal/10 text-charcoal text-xs font-semibold rounded-lg cursor-pointer border-none hover:bg-charcoal/20">Remove Admin</button>
                   )}
                   <button onClick={() => handleMemberAction(member.id, 'delete')} className="px-3 py-1.5 bg-red-100 text-red-700 text-xs font-semibold rounded-lg cursor-pointer border-none hover:bg-red-200">Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Submissions Tab */}
+        {activeTab === 'submissions' && (
+          <div className="space-y-3">
+            {submissions.length === 0 ? (
+              <p className="text-charcoal-light text-sm py-8 text-center">No pending submissions.</p>
+            ) : submissions.map(sub => (
+              <div key={sub.id} className="card p-4 border-amber-200 bg-amber-50/20">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <h4 className="font-semibold text-charcoal text-sm">{sub.title}</h4>
+                      <span className={`text-[0.6rem] font-bold px-1.5 py-0.5 rounded uppercase ${
+                        sub.category === 'members_news' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                      }`}>
+                        {sub.category === 'members_news' ? 'Members News' : 'PR'}
+                      </span>
+                      {sub.subcategory && (
+                        <span className="text-[0.6rem] font-bold bg-charcoal/10 text-charcoal-light px-1.5 py-0.5 rounded uppercase">
+                          {sub.subcategory.replace(/_/g, ' ')}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-charcoal-light">
+                      {t('news.by')} {sub.author_name || 'Unknown'} ({sub.author_email}) · {new Date(sub.created_at).toLocaleDateString()}
+                    </p>
+                    <p className="text-sm text-charcoal mt-2 line-clamp-3">{sub.content?.slice(0, 300)}{sub.content?.length > 300 ? '...' : ''}</p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button onClick={() => handleSubmissionAction(sub.id, 'approve')} className="px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg cursor-pointer border-none hover:bg-green-700">Approve</button>
+                    <button onClick={() => handleSubmissionAction(sub.id, 'reject')} className="px-3 py-1.5 bg-red-100 text-red-700 text-xs font-semibold rounded-lg cursor-pointer border-none hover:bg-red-200">Reject</button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -315,7 +376,7 @@ export default function AdminPage() {
           <div>
             {/* News form */}
             <form onSubmit={handleNewsSubmit} className="card p-6 mb-8 space-y-4">
-              <h3 className="font-display text-lg font-semibold text-charcoal">{editingNews ? 'Edit Article' : 'Create Article'}</h3>
+              <h3 className="font-display text-lg font-semibold text-charcoal">{editingNews ? 'Edit Article' : 'Create News Article'}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-charcoal mb-1">Title (EN) *</label>
@@ -325,6 +386,10 @@ export default function AdminPage() {
                   <label className="block text-xs font-medium text-charcoal mb-1">Title (KO)</label>
                   <input type="text" value={newsForm.titleKo} onChange={e => setNewsForm(p => ({ ...p, titleKo: e.target.value }))} className={inputClass} />
                 </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-charcoal mb-1">External URL (sxsk.news link)</label>
+                <input type="url" value={newsForm.externalUrl} onChange={e => setNewsForm(p => ({ ...p, externalUrl: e.target.value }))} placeholder="https://sxsk.news/..." className={inputClass} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-charcoal mb-1">Content (EN) *</label>
@@ -341,7 +406,7 @@ export default function AdminPage() {
               <div className="flex gap-3">
                 <button type="submit" className="btn-primary text-sm">{editingNews ? 'Update' : 'Create'} Article</button>
                 {editingNews && (
-                  <button type="button" onClick={() => { setEditingNews(null); setNewsForm({ title: '', titleKo: '', content: '', contentKo: '', published: false }) }} className="btn-secondary text-sm">Cancel</button>
+                  <button type="button" onClick={() => { setEditingNews(null); setNewsForm({ title: '', titleKo: '', content: '', contentKo: '', published: false, category: 'news', externalUrl: '' }) }} className="btn-secondary text-sm">Cancel</button>
                 )}
               </div>
             </form>
@@ -351,9 +416,16 @@ export default function AdminPage() {
               {articles.map(article => (
                 <div key={article.id} className={`card p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${!article.published ? 'opacity-60' : ''}`}>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="font-semibold text-charcoal text-sm">{article.title}</h4>
                       {!article.published && <span className="text-[0.6rem] font-bold bg-charcoal/10 text-charcoal px-1.5 py-0.5 rounded uppercase">Draft</span>}
+                      {article.category && article.category !== 'news' && (
+                        <span className={`text-[0.6rem] font-bold px-1.5 py-0.5 rounded uppercase ${
+                          article.category === 'members_news' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                        }`}>{article.category === 'members_news' ? 'Members News' : 'PR'}</span>
+                      )}
+                      {article.approval_status === 'pending' && <span className="text-[0.6rem] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded uppercase">Pending</span>}
+                      {article.approval_status === 'rejected' && <span className="text-[0.6rem] font-bold bg-red-100 text-red-800 px-1.5 py-0.5 rounded uppercase">Rejected</span>}
                     </div>
                     {article.title_ko && <p className="text-xs text-charcoal-light">{article.title_ko}</p>}
                     <p className="text-xs text-charcoal-light mt-0.5">

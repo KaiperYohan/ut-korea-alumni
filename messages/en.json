@@ -9,7 +9,9 @@
     "signup": "Join Us",
     "signout": "Sign Out",
     "admin": "Admin",
-    "profile": "My Profile"
+    "profile": "My Profile",
+    "submit": "Submit Post",
+    "myPosts": "My Posts"
   },
   "hero": {
     "badge": "UT Austin Korea Alumni",
@@ -43,8 +45,42 @@
     "viewAll": "View All News",
     "noNews": "No news articles yet.",
     "readMore": "Read More",
+    "readOriginal": "Read original article",
     "by": "By",
-    "published": "Published"
+    "published": "Published",
+    "categories": {
+      "news": "News",
+      "membersNews": "Members News",
+      "pr": "PR"
+    },
+    "subcategories": {
+      "marriage": "Marriage",
+      "birth": "Birth",
+      "death": "Condolence",
+      "promotion": "Promotion",
+      "jobChange": "Job Change",
+      "seekingEmployment": "Seeking Employment"
+    },
+    "approval": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "pendingMessage": "Your submission is pending admin review.",
+      "rejectedMessage": "Your submission was not approved."
+    },
+    "submit": {
+      "title": "Submit a Post",
+      "subtitle": "Share your news with the alumni community",
+      "selectCategory": "Category",
+      "selectSubcategory": "Type",
+      "submitBtn": "Submit for Review",
+      "successMessage": "Your post has been submitted and is pending approval."
+    },
+    "myPosts": {
+      "title": "My Posts",
+      "subtitle": "View and manage your submissions",
+      "noPosts": "You haven't submitted any posts yet."
+    }
   },
   "members": {
     "title": "Member Directory",
@@ -57,7 +93,8 @@
     "noMembers": "No members found matching your search.",
     "class": "Class of",
     "location": "Location",
-    "company": "Company"
+    "company": "Company",
+    "noAccess": "Directory access requires Full or Executive membership."
   },
   "auth": {
     "loginTitle": "Welcome Back",
@@ -141,6 +178,10 @@
       "passwordMismatch": "New passwords do not match",
       "updateFailed": "Failed to update profile"
     }
+  },
+  "permissions": {
+    "noWriteAccess": "Posting requires Full or Executive membership.",
+    "noEventAccess": "Event creation requires Executive membership."
   },
   "common": {
     "loading": "Loading...",

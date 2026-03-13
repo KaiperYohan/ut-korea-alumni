@@ -1,6 +1,7 @@
 import { sql } from '@/lib/db'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { canCreateEvent } from '@/lib/permissions'
 
 export async function GET() {
   const { rows: events } = await sql`
@@ -15,8 +16,12 @@ export async function GET() {
 
 export async function POST(request) {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.isAdmin) {
+  if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  if (!canCreateEvent(session.user.membershipLevel, session.user.isAdmin)) {
+    return Response.json({ error: 'Event creation requires Executive membership or Admin' }, { status: 403 })
   }
 
   const body = await request.json()

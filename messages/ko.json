@@ -9,7 +9,9 @@
     "signup": "가입하기",
     "signout": "로그아웃",
     "admin": "관리자",
-    "profile": "내 프로필"
+    "profile": "내 프로필",
+    "submit": "글 작성",
+    "myPosts": "내 글"
   },
   "hero": {
     "badge": "UT Austin 한국 동문회",
@@ -43,8 +45,42 @@
     "viewAll": "전체 소식 보기",
     "noNews": "아직 소식이 없습니다.",
     "readMore": "더 읽기",
+    "readOriginal": "원본 기사 보기",
     "by": "작성자",
-    "published": "게시일"
+    "published": "게시일",
+    "categories": {
+      "news": "뉴스",
+      "membersNews": "회원 소식",
+      "pr": "홍보"
+    },
+    "subcategories": {
+      "marriage": "결혼",
+      "birth": "출산",
+      "death": "부고",
+      "promotion": "승진",
+      "jobChange": "이직",
+      "seekingEmployment": "구직"
+    },
+    "approval": {
+      "pending": "승인 대기",
+      "approved": "승인됨",
+      "rejected": "반려됨",
+      "pendingMessage": "관리자 검토 대기 중입니다.",
+      "rejectedMessage": "게시물이 승인되지 않았습니다."
+    },
+    "submit": {
+      "title": "글 작성",
+      "subtitle": "동문 커뮤니티와 소식을 나누세요",
+      "selectCategory": "카테고리",
+      "selectSubcategory": "유형",
+      "submitBtn": "검토 요청",
+      "successMessage": "글이 제출되었으며 승인 대기 중입니다."
+    },
+    "myPosts": {
+      "title": "내 글",
+      "subtitle": "제출한 글을 확인하고 관리하세요",
+      "noPosts": "아직 제출한 글이 없습니다."
+    }
   },
   "members": {
     "title": "회원 명부",
@@ -57,7 +93,8 @@
     "noMembers": "검색 결과가 없습니다.",
     "class": "졸업",
     "location": "지역",
-    "company": "직장"
+    "company": "직장",
+    "noAccess": "회원 명부는 정회원 또는 임원만 열람할 수 있습니다."
   },
   "auth": {
     "loginTitle": "돌아오신 것을 환영합니다",
@@ -141,6 +178,10 @@
       "passwordMismatch": "새 비밀번호가 일치하지 않습니다",
       "updateFailed": "프로필 업데이트에 실패했습니다"
     }
+  },
+  "permissions": {
+    "noWriteAccess": "글 작성은 정회원 또는 임원만 가능합니다.",
+    "noEventAccess": "행사 등록은 임원만 가능합니다."
   },
   "common": {
     "loading": "로딩 중...",
