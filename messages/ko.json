@@ -11,7 +11,8 @@
     "admin": "관리자",
     "profile": "내 프로필",
     "submit": "글 작성",
-    "myPosts": "내 글"
+    "myPosts": "내 글",
+    "dues": "회비"
   },
   "hero": {
     "badge": "UT Austin 한국 동문회",
@@ -153,6 +154,23 @@
   "about": {
     "title": "소개",
     "subtitle": "텍사스 대학교 오스틴 한국 동문회"
+  },
+  "dues": {
+    "title": "회비 안내",
+    "subtitle": "동문 커뮤니티를 지원하고 정회원 혜택을 누리세요",
+    "benefitsTitle": "정회원 혜택",
+    "benefit1": "Alumni Directory 열람",
+    "benefit2": "각종 행사 우선 등록 및 할인",
+    "benefit3": "멘토링·리크루팅 프로그램 우선 참여",
+    "paymentTitle": "납부 안내",
+    "amount": "연회비",
+    "amountValue": "연 50,000원",
+    "bank": "은행",
+    "bankName": "토스뱅크",
+    "accountNumber": "계좌번호",
+    "accountHolder": "예금주",
+    "note": "회비 납부 시 오픈채팅방에서 사용 중인 이름 및 졸업년도를 기재해 주세요.",
+    "joinBtn": "동문 네트워크 가입"
   },
   "membership": {
     "level": "회원 등급",

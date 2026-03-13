@@ -11,7 +11,8 @@
     "admin": "Admin",
     "profile": "My Profile",
     "submit": "Submit Post",
-    "myPosts": "My Posts"
+    "myPosts": "My Posts",
+    "dues": "Dues"
   },
   "hero": {
     "badge": "UT Austin Korea Alumni",
@@ -153,6 +154,23 @@
   "about": {
     "title": "About Us",
     "subtitle": "The University of Texas at Austin Korea Alumni Association"
+  },
+  "dues": {
+    "title": "Membership Dues",
+    "subtitle": "Support the alumni community and unlock full membership benefits",
+    "benefitsTitle": "Full Member Benefits",
+    "benefit1": "Access to the Alumni Directory",
+    "benefit2": "Priority registration and discounts for events",
+    "benefit3": "Priority access to mentoring and recruiting programs",
+    "paymentTitle": "Payment Information",
+    "amount": "Annual Dues",
+    "amountValue": "50,000 KRW / year",
+    "bank": "Bank",
+    "bankName": "Toss Bank",
+    "accountNumber": "Account Number",
+    "accountHolder": "Account Holder",
+    "note": "When making your payment, please include your name and graduation year as used in the KakaoTalk open chat.",
+    "joinBtn": "Join Our Network"
   },
   "membership": {
     "level": "Membership",

@@ -39,6 +39,7 @@ export default function Navbar() {
     { href: '/events', label: t('nav.events') },
     { href: '/news', label: t('nav.news') },
     { href: '/members', label: t('nav.members'), auth: true },
+    { href: '/dues', label: t('nav.dues') },
     { href: '/about', label: t('nav.about') },
     ...(canWrite ? [{ href: '/submit', label: t('nav.submit') }] : []),
     ...(session?.user?.isAdmin ? [{ href: '/admin', label: t('nav.admin') }] : []),
