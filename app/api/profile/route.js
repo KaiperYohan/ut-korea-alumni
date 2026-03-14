@@ -10,7 +10,7 @@ export async function GET() {
 
   const { rows } = await sql`
     SELECT id, email, name, name_ko, graduation_year, major, location, company, title, bio, birthday, phone,
-           linkedin, instagram, tiktok, youtube, interests, profile_image_url, membership_level
+           linkedin, instagram, tiktok, youtube, twitter, interests, profile_image_url, membership_level
     FROM members WHERE id = ${session.user.id}
   `
 
@@ -36,6 +36,7 @@ export async function GET() {
     instagram: user.instagram,
     tiktok: user.tiktok,
     youtube: user.youtube,
+    twitter: user.twitter,
     interests: user.interests,
   })
 }
@@ -48,7 +49,7 @@ export async function PUT(request) {
 
   const body = await request.json()
   const { name, nameKo, graduationYear, major, location, company, title, bio, birthday, phone,
-          linkedin, instagram, tiktok, youtube, interests } = body
+          linkedin, instagram, tiktok, youtube, twitter, interests } = body
 
   if (!name?.trim()) {
     return Response.json({ error: 'Name is required' }, { status: 400 })
@@ -70,6 +71,7 @@ export async function PUT(request) {
       instagram = ${instagram?.trim() || null},
       tiktok = ${tiktok?.trim() || null},
       youtube = ${youtube?.trim() || null},
+      twitter = ${twitter?.trim() || null},
       interests = ${interests?.trim() || null}
     WHERE id = ${session.user.id}
   `

@@ -55,6 +55,7 @@ export async function GET(request) {
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS instagram VARCHAR(255)`
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS tiktok VARCHAR(255)`
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS youtube VARCHAR(255)`
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS twitter VARCHAR(255)`
 
     // Add interests column (comma-separated)
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS interests TEXT`

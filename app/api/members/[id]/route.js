@@ -17,7 +17,7 @@ export async function GET(request, { params }) {
 
   const { rows } = await sql`
     SELECT id, email, name, name_ko, graduation_year, major, location, company, title, bio, phone,
-           linkedin, instagram, tiktok, youtube, interests, profile_image_url, membership_level
+           linkedin, instagram, tiktok, youtube, twitter, interests, profile_image_url, membership_level
     FROM members
     WHERE id = ${id} AND is_approved = true
   `
