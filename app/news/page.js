@@ -108,50 +108,62 @@ export default function NewsPage() {
           <div className="card p-12 text-center text-charcoal-light">{t('news.noNews')}</div>
         ) : (
           <div className="space-y-6">
-            {articles.map(article => (
-              <Link key={article.id} href={`/news/${article.id}`} className="card overflow-hidden flex flex-col md:flex-row no-underline group">
-                {/* Placeholder image area */}
-                <div className="shrink-0 w-full md:w-56 h-40 md:h-auto bg-gradient-to-br from-cream to-cream-light relative overflow-hidden">
-                  <div className="absolute inset-0 diagonal-accent" />
-                </div>
-                <div className="flex-1 p-5 md:p-6">
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    {article.category && article.category !== 'news' && (
-                      <span className={`text-[0.6rem] font-bold px-1.5 py-0.5 rounded uppercase ${
-                        article.category === 'members_news' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
-                      }`}>
-                        {categoryLabel(article.category)}
-                      </span>
-                    )}
-                    {article.subcategory && (
-                      <span className="text-[0.6rem] font-bold bg-charcoal/10 text-charcoal-light px-1.5 py-0.5 rounded uppercase">
-                        {subcategoryLabel(article.subcategory)}
-                      </span>
-                    )}
-                    <span className="text-xs text-charcoal-light">{formatDate(article.created_at)}</span>
-                    {article.author_name && (
-                      <>
-                        <span className="text-charcoal/20">·</span>
-                        <span className="text-xs text-charcoal-light">{t('news.by')} {article.author_name}</span>
-                      </>
-                    )}
+            {articles.map(article => {
+              const hasExternal = !!article.external_url
+              const CardTag = hasExternal ? 'a' : Link
+              const cardProps = hasExternal
+                ? { href: article.external_url, target: '_blank', rel: 'noopener noreferrer' }
+                : { href: `/news/${article.id}` }
+
+              return (
+                <CardTag key={article.id} {...cardProps} className="card overflow-hidden flex flex-col md:flex-row no-underline group">
+                  {/* Placeholder image area */}
+                  <div className="shrink-0 w-full md:w-56 h-40 md:h-auto bg-gradient-to-br from-cream to-cream-light relative overflow-hidden">
+                    <div className="absolute inset-0 diagonal-accent" />
                   </div>
-                  <h2 className="font-display text-xl font-semibold text-charcoal group-hover:text-burnt-orange transition-colors leading-snug">
-                    {locale === 'ko' && article.title_ko ? article.title_ko : article.title}
-                  </h2>
-                  {locale === 'ko' && article.title_ko && (
-                    <p className="text-sm text-charcoal-light mt-0.5">{article.title}</p>
-                  )}
-                  <p className="text-sm text-charcoal-light mt-2 line-clamp-2 leading-relaxed">
-                    {(locale === 'ko' && article.content_ko ? article.content_ko : article.content)?.slice(0, 200)}...
-                  </p>
-                  <span className="inline-flex items-center gap-1 text-burnt-orange text-sm font-medium mt-3">
-                    {t('news.readMore')}
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
-                  </span>
-                </div>
-              </Link>
-            ))}
+                  <div className="flex-1 p-5 md:p-6">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      {article.category && article.category !== 'news' && (
+                        <span className={`text-[0.6rem] font-bold px-1.5 py-0.5 rounded uppercase ${
+                          article.category === 'members_news' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                        }`}>
+                          {categoryLabel(article.category)}
+                        </span>
+                      )}
+                      {article.subcategory && (
+                        <span className="text-[0.6rem] font-bold bg-charcoal/10 text-charcoal-light px-1.5 py-0.5 rounded uppercase">
+                          {subcategoryLabel(article.subcategory)}
+                        </span>
+                      )}
+                      <span className="text-xs text-charcoal-light">{formatDate(article.created_at)}</span>
+                      {article.author_name && (
+                        <>
+                          <span className="text-charcoal/20">·</span>
+                          <span className="text-xs text-charcoal-light">{t('news.by')} {article.author_name}</span>
+                        </>
+                      )}
+                    </div>
+                    <h2 className="font-display text-xl font-semibold text-charcoal group-hover:text-burnt-orange transition-colors leading-snug">
+                      {locale === 'ko' && article.title_ko ? article.title_ko : article.title}
+                    </h2>
+                    {locale === 'ko' && article.title_ko && (
+                      <p className="text-sm text-charcoal-light mt-0.5">{article.title}</p>
+                    )}
+                    <p className="text-sm text-charcoal-light mt-2 line-clamp-2 leading-relaxed">
+                      {(locale === 'ko' && article.content_ko ? article.content_ko : article.content)?.slice(0, 200)}...
+                    </p>
+                    <span className="inline-flex items-center gap-1 text-burnt-orange text-sm font-medium mt-3">
+                      {hasExternal ? t('news.readOriginal') : t('news.readMore')}
+                      {hasExternal ? (
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      ) : (
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
+                      )}
+                    </span>
+                  </div>
+                </CardTag>
+              )
+            })}
           </div>
         )}
       </div>
