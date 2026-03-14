@@ -227,7 +227,7 @@ export default function ProfilePage() {
     title: t('auth.jobTitle'),
     phone: t('memberDetail.phone'),
     bio: t('auth.bio'),
-    anySocial: t('profile.socialLinks'),
+    socialLinks: t('profile.socialLinks'),
     interests: t('profile.interests'),
   }
 
