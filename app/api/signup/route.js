@@ -6,10 +6,10 @@ import { sendVerificationEmail } from '@/lib/email'
 export async function POST(request) {
   try {
     const body = await request.json()
-    const { email, password, name, nameKo, graduationYear, major, location, company, title, bio, birthday, privacyConsent, marketingConsent } = body
+    const { email, password, name, nameKo, graduationYear, major, location, company, title, bio, birthday, phone, privacyConsent, marketingConsent } = body
 
-    if (!email || !password || !name) {
-      return Response.json({ error: 'Email, password, and name are required' }, { status: 400 })
+    if (!email || !password || !name || !phone) {
+      return Response.json({ error: 'Email, password, name, and phone are required' }, { status: 400 })
     }
 
     if (!privacyConsent) {
@@ -32,8 +32,8 @@ export async function POST(request) {
 
     const now = new Date().toISOString()
     const { rows } = await sql`
-      INSERT INTO members (email, password_hash, name, name_ko, graduation_year, major, location, company, title, bio, birthday, email_verified, verification_token, verification_token_expires, privacy_consent, privacy_consent_date, marketing_consent, marketing_consent_date)
-      VALUES (${email}, ${passwordHash}, ${name}, ${nameKo || null}, ${graduationYear ? parseInt(graduationYear) : null}, ${major || null}, ${location || null}, ${company || null}, ${title || null}, ${bio || null}, ${birthday || null}, false, ${verificationToken}, ${tokenExpires.toISOString()}, ${true}, ${now}, ${!!marketingConsent}, ${marketingConsent ? now : null})
+      INSERT INTO members (email, password_hash, name, name_ko, graduation_year, major, location, company, title, bio, birthday, phone, email_verified, verification_token, verification_token_expires, privacy_consent, privacy_consent_date, marketing_consent, marketing_consent_date)
+      VALUES (${email}, ${passwordHash}, ${name}, ${nameKo || null}, ${graduationYear ? parseInt(graduationYear) : null}, ${major || null}, ${location || null}, ${company || null}, ${title || null}, ${bio || null}, ${birthday || null}, ${phone}, false, ${verificationToken}, ${tokenExpires.toISOString()}, ${true}, ${now}, ${!!marketingConsent}, ${marketingConsent ? now : null})
       RETURNING id, email, name
     `
 

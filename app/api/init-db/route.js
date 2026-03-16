@@ -100,6 +100,15 @@ export async function GET(request) {
       )
     `
 
+    // Site settings table
+    await sql`
+      CREATE TABLE IF NOT EXISTS site_settings (
+        key VARCHAR(100) PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `
+
     // Add columns to members (idempotent)
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT false`
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255)`

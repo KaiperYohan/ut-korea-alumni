@@ -1,10 +1,24 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useT } from './components/LanguageProvider'
 
 export default function Home() {
   const t = useT()
+  const [stats, setStats] = useState({ stat_members: '150+', stat_events: '50+', stat_years: '15+' })
+
+  useEffect(() => {
+    fetch('/api/settings').then(r => r.json()).then(d => {
+      if (d.settings) {
+        setStats(prev => ({
+          stat_members: d.settings.stat_members || prev.stat_members,
+          stat_events: d.settings.stat_events || prev.stat_events,
+          stat_years: d.settings.stat_years || prev.stat_years,
+        }))
+      }
+    }).catch(() => {})
+  }, [])
 
   return (
     <>
@@ -68,15 +82,15 @@ export default function Home() {
         <div className="bg-white rounded-2xl shadow-xl border border-charcoal/5 p-8 md:p-10">
           <div className="grid grid-cols-3 gap-8 md:gap-12">
             <div className="text-center">
-              <div className="font-display text-3xl md:text-4xl font-bold text-burnt-orange mb-1">150+</div>
+              <div className="font-display text-3xl md:text-4xl font-bold text-burnt-orange mb-1">{stats.stat_members}</div>
               <div className="text-sm text-charcoal-light font-medium">{t('stats.members')}</div>
             </div>
             <div className="text-center border-x border-charcoal/10">
-              <div className="font-display text-3xl md:text-4xl font-bold text-burnt-orange mb-1">50+</div>
+              <div className="font-display text-3xl md:text-4xl font-bold text-burnt-orange mb-1">{stats.stat_events}</div>
               <div className="text-sm text-charcoal-light font-medium">{t('stats.events')}</div>
             </div>
             <div className="text-center">
-              <div className="font-display text-3xl md:text-4xl font-bold text-burnt-orange mb-1">15+</div>
+              <div className="font-display text-3xl md:text-4xl font-bold text-burnt-orange mb-1">{stats.stat_years}</div>
               <div className="text-sm text-charcoal-light font-medium">{t('stats.years')}</div>
             </div>
           </div>

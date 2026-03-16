@@ -11,7 +11,7 @@ export default function SignupPage() {
   const [form, setForm] = useState({
     email: '', password: '', confirmPassword: '',
     name: '', nameKo: '', graduationYear: '', major: '',
-    location: '', company: '', title: '', birthday: '', bio: '',
+    phone: '', location: '', company: '', title: '', birthday: '', bio: '',
     privacyConsent: false, marketingConsent: false
   })
   const [error, setError] = useState('')
@@ -24,7 +24,7 @@ export default function SignupPage() {
     e.preventDefault()
     setError('')
 
-    if (!form.email || !form.password || !form.name) {
+    if (!form.email || !form.password || !form.name || !form.phone) {
       setError(t('auth.errors.required'))
       return
     }
@@ -116,9 +116,15 @@ export default function SignupPage() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-charcoal mb-1.5">{t('auth.email')} *</label>
-            <input type="email" value={form.email} onChange={update('email')} required className={inputClass} placeholder="longhorn@utexas.edu" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-charcoal mb-1.5">{t('auth.email')} *</label>
+              <input type="email" value={form.email} onChange={update('email')} required className={inputClass} placeholder="longhorn@utexas.edu" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-charcoal mb-1.5">{t('memberDetail.phone')} *</label>
+              <input type="tel" value={form.phone} onChange={update('phone')} required className={inputClass} placeholder={t('memberDetail.phonePlaceholder')} />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

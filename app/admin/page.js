@@ -17,6 +17,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [orgPositions, setOrgPositions] = useState([])
   const [orgSaving, setOrgSaving] = useState(false)
+  const [siteSettings, setSiteSettings] = useState({ stat_members: '150+', stat_events: '50+', stat_years: '15+' })
+  const [settingsSaving, setSettingsSaving] = useState(false)
 
   // Event form state
   const [eventForm, setEventForm] = useState({ title: '', titleKo: '', description: '', descriptionKo: '', eventDate: '', location: '', locationKo: '', maxAttendees: '' })
@@ -33,25 +35,30 @@ export default function AdminPage() {
 
   const fetchAll = async () => {
     setLoading(true)
-    const [membersRes, eventsRes, newsRes, subsRes, orgRes] = await Promise.all([
+    const [membersRes, eventsRes, newsRes, subsRes, orgRes, settingsRes] = await Promise.all([
       fetch('/api/admin/members'),
       fetch('/api/events'),
       fetch('/api/admin/news'),
       fetch('/api/admin/submissions'),
       fetch('/api/admin/org'),
+      fetch('/api/admin/settings'),
     ])
-    const [membersData, eventsData, newsData, subsData, orgData] = await Promise.all([
+    const [membersData, eventsData, newsData, subsData, orgData, settingsData] = await Promise.all([
       membersRes.json(),
       eventsRes.json(),
       newsRes.json(),
       subsRes.json(),
       orgRes.json(),
+      settingsRes.json(),
     ])
     setMembers(membersData.members || [])
     setEvents(eventsData.events || [])
     setArticles(newsData.articles || [])
     setSubmissions(subsData.submissions || [])
     setOrgPositions(orgData.positions || [])
+    if (settingsData.settings) {
+      setSiteSettings(prev => ({ ...prev, ...settingsData.settings }))
+    }
     setLoading(false)
   }
 
@@ -231,6 +238,16 @@ export default function AdminPage() {
     setOrgSaving(false)
   }
 
+  const handleSettingsSave = async () => {
+    setSettingsSaving(true)
+    await fetch('/api/admin/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ settings: siteSettings }),
+    })
+    setSettingsSaving(false)
+  }
+
   if (status === 'loading' || loading) {
     return <div className="min-h-screen flex items-center justify-center pt-20 text-charcoal-light">Loading...</div>
   }
@@ -252,6 +269,7 @@ export default function AdminPage() {
     { id: 'events', label: 'Events' },
     { id: 'news', label: 'News' },
     { id: 'org', label: 'Organization' },
+    { id: 'settings', label: 'Settings' },
   ]
 
   return (
@@ -579,6 +597,58 @@ export default function AdminPage() {
                 </div>
               ))}
               {articles.length === 0 && <p className="text-charcoal-light text-sm py-8 text-center">No articles yet.</p>}
+            </div>
+          </div>
+        )}
+
+        {/* Settings Tab */}
+        {activeTab === 'settings' && (
+          <div className="card p-6 md:p-8">
+            <h2 className="font-display text-xl font-semibold text-charcoal mb-6">Site Settings</h2>
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-display text-base font-semibold text-charcoal mb-3">Homepage Stats</h3>
+                <p className="text-sm text-charcoal-light mb-4">These numbers are displayed on the front page stats section.</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-charcoal mb-1">Members</label>
+                    <input
+                      type="text"
+                      value={siteSettings.stat_members}
+                      onChange={(e) => setSiteSettings(prev => ({ ...prev, stat_members: e.target.value }))}
+                      className={inputClass}
+                      placeholder="150+"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-charcoal mb-1">Events Held</label>
+                    <input
+                      type="text"
+                      value={siteSettings.stat_events}
+                      onChange={(e) => setSiteSettings(prev => ({ ...prev, stat_events: e.target.value }))}
+                      className={inputClass}
+                      placeholder="50+"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-charcoal mb-1">Years Active</label>
+                    <input
+                      type="text"
+                      value={siteSettings.stat_years}
+                      onChange={(e) => setSiteSettings(prev => ({ ...prev, stat_years: e.target.value }))}
+                      className={inputClass}
+                      placeholder="15+"
+                    />
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={handleSettingsSave}
+                disabled={settingsSaving}
+                className="btn-primary !py-2.5 !px-6 cursor-pointer"
+              >
+                {settingsSaving ? 'Saving...' : 'Save Settings'}
+              </button>
             </div>
           </div>
         )}
