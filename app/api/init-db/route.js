@@ -1,15 +1,21 @@
 import { sql } from '@/lib/db'
 
 export async function GET(request) {
-  const authHeader = request.headers.get('authorization')
-  const authQuery = request.nextUrl.searchParams.get('Authorization')
-  const isAuthorized = authHeader === `Bearer ${process.env.ADMIN_SECRET}` || authQuery === `Bearer ${process.env.ADMIN_SECRET}`
-
-  if (!isAuthorized) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   try {
+    const url = new URL(request.url)
+    const authHeader = request.headers.get('authorization')
+    const authQuery = url.searchParams.get('Authorization')
+    const secret = process.env.ADMIN_SECRET
+
+    if (!secret) {
+      return Response.json({ error: 'ADMIN_SECRET not configured' }, { status: 500 })
+    }
+
+    const isAuthorized = authHeader === `Bearer ${secret}` || authQuery === `Bearer ${secret}`
+
+    if (!isAuthorized) {
+      return Response.json({ error: 'Unauthorized', hint: 'Pass ?Authorization=Bearer <secret>' }, { status: 401 })
+    }
     // Members table
     await sql`
       CREATE TABLE IF NOT EXISTS members (
@@ -123,6 +129,6 @@ export async function GET(request) {
     return Response.json({ success: true, message: 'All tables created successfully' })
   } catch (error) {
     console.error('DB init error:', error)
-    return Response.json({ error: error.message }, { status: 500 })
+    return Response.json({ error: error.message, stack: error.stack }, { status: 500 })
   }
 }
