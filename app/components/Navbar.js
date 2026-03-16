@@ -114,6 +114,7 @@ export default function Navbar() {
       isActive: isActive('/about'),
       children: [
         { href: '/about#organization', label: t('nav.organization') },
+        { href: '/about#past-presidents', label: t('nav.pastPresidents') },
         { href: '/about#contact', label: t('nav.contact') },
       ],
     },
@@ -126,10 +127,12 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
           <Link href="/" className={`flex items-center gap-2.5 ${logoColor} transition-colors no-underline`}>
-            <svg viewBox="0 0 40 28" className="w-10 h-7 fill-current">
-              <path d="M20 12C20 12 16 4 8 2C6 1.5 3 1.5 1 3C0.5 3.3 0 4 0.5 4.5C1 5 2 4.8 3 4.5C5 3.8 7 4 8 5C10 7 12 10 14 12C15 13 17 15 20 15C23 15 25 13 26 12C28 10 30 7 32 5C33 4 35 3.8 37 4.5C38 4.8 39 5 39.5 4.5C40 4 39.5 3.3 39 3C37 1.5 34 1.5 32 2C24 4 20 12 20 12Z"/>
-              <path d="M20 15C17 15 15 17 14 19C13 21 13 24 15 26C16 27 18 28 20 28C22 28 24 27 25 26C27 24 27 21 26 19C25 17 23 15 20 15ZM20 25C18.5 25 17.5 23.5 18 22C18.3 21 19 20 20 20C21 20 21.7 21 22 22C22.5 23.5 21.5 25 20 25Z"/>
-            </svg>
+            <div className="w-10 h-10 rounded-full bg-burnt-orange flex items-center justify-center flex-shrink-0">
+              <svg viewBox="0 0 100 70" className="w-7 h-5 fill-white">
+                <path d="M50 28C50 28 46 18 38 12C34 9 28 7 22 7C17 7 12 8 8 11C5 13 2 16 1 19C0.5 20.5 0.5 22 1.5 23C2.5 24 4 23.5 5.5 23C8 22 11 21.5 14 22C17 23 19 25 21 27C24 30 27 34 30 37C33 40 37 43 41 45C44 46.5 47 47.5 50 47.5C53 47.5 56 46.5 59 45C63 43 67 40 70 37C73 34 76 30 79 27C81 25 83 23 86 22C89 21.5 92 22 94.5 23C96 23.5 97.5 24 98.5 23C99.5 22 99.5 20.5 99 19C98 16 95 13 92 11C88 8 83 7 78 7C72 7 66 9 62 12C54 18 50 28 50 28Z"/>
+                <path d="M50 47.5C45 47.5 42 50 40 53C38 56 37 60 38 63C39 65.5 41 67.5 44 69C46 69.8 48 70 50 70C52 70 54 69.8 56 69C59 67.5 61 65.5 62 63C63 60 62 56 60 53C58 50 55 47.5 50 47.5ZM50 65C47.5 65 46 63 46.5 61C47 59.5 48 58 50 58C52 58 53 59.5 53.5 61C54 63 52.5 65 50 65Z"/>
+              </svg>
+            </div>
             <div className="flex flex-col leading-none">
               <span className="font-display text-lg font-bold tracking-tight">UT Austin</span>
               <span className="text-[0.65rem] tracking-[0.15em] uppercase opacity-80 font-body">Korea Alumni</span>
