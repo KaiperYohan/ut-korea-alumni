@@ -64,7 +64,9 @@
       "promotion": "Promotion",
       "jobChange": "Job Change",
       "seekingEmployment": "Seeking Employment",
-      "birthday": "Birthday"
+      "birthday": "Birthday",
+      "hiring": "Hiring",
+      "other": "Other"
     },
     "approval": {
       "pending": "Pending",
@@ -79,6 +81,7 @@
       "selectCategory": "Category",
       "selectSubcategory": "Type",
       "submitBtn": "Submit for Review",
+      "link": "Link (Optional)",
       "successMessage": "Your post has been submitted and is pending approval."
     },
     "myPosts": {

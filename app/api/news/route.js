@@ -79,7 +79,7 @@ export async function POST(request) {
       return Response.json({ error: 'Subcategory is required for Members News' }, { status: 400 })
     }
 
-    const validSubcategories = ['marriage', 'birth', 'death', 'promotion', 'job_change', 'seeking_employment']
+    const validSubcategories = ['marriage', 'birth', 'death', 'promotion', 'job_change', 'seeking_employment', 'hiring', 'other']
     if (category === 'members_news' && !validSubcategories.includes(subcategory)) {
       return Response.json({ error: 'Invalid subcategory' }, { status: 400 })
     }
@@ -89,8 +89,8 @@ export async function POST(request) {
     const isPublished = isAdmin ? (published || false) : false
 
     const { rows } = await sql`
-      INSERT INTO news (title, title_ko, content, content_ko, author_id, image_url, published, category, subcategory, approval_status)
-      VALUES (${title}, ${titleKo || null}, ${content}, ${contentKo || null}, ${parseInt(session.user.id)}, ${imageUrl || null}, ${isPublished}, ${category}, ${subcategory || null}, ${approvalStatus})
+      INSERT INTO news (title, title_ko, content, content_ko, author_id, image_url, published, category, subcategory, external_url, approval_status)
+      VALUES (${title}, ${titleKo || null}, ${content}, ${contentKo || null}, ${parseInt(session.user.id)}, ${imageUrl || null}, ${isPublished}, ${category}, ${subcategory || null}, ${externalUrl || null}, ${approvalStatus})
       RETURNING *
     `
     return Response.json({ article: rows[0] })

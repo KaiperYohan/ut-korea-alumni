@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useT } from '../components/LanguageProvider'
 
-const SUBCATEGORIES = ['marriage', 'birth', 'death', 'promotion', 'job_change', 'seeking_employment']
+const SUBCATEGORIES = ['marriage', 'birth', 'death', 'promotion', 'job_change', 'seeking_employment', 'hiring', 'other']
 
 export default function SubmitPage() {
   const t = useT()
@@ -19,6 +19,7 @@ export default function SubmitPage() {
     titleKo: '',
     content: '',
     contentKo: '',
+    externalUrl: '',
   })
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -175,6 +176,12 @@ export default function SubmitPage() {
           <div>
             <label className="block text-xs font-medium text-charcoal mb-1">Content (KO)</label>
             <textarea value={form.contentKo} onChange={e => setForm(p => ({ ...p, contentKo: e.target.value }))} rows={6} className={inputClass + ' resize-none'} />
+          </div>
+
+          {/* Link */}
+          <div>
+            <label className="block text-xs font-medium text-charcoal mb-1">{t('news.submit.link')}</label>
+            <input type="url" value={form.externalUrl} onChange={e => setForm(p => ({ ...p, externalUrl: e.target.value }))} className={inputClass} placeholder="https://..." />
           </div>
 
           <button type="submit" disabled={submitting} className="btn-primary text-sm">

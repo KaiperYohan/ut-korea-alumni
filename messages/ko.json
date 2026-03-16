@@ -64,7 +64,9 @@
       "promotion": "승진",
       "jobChange": "이직",
       "seekingEmployment": "구직",
-      "birthday": "생일"
+      "birthday": "생일",
+      "hiring": "채용",
+      "other": "기타"
     },
     "approval": {
       "pending": "승인 대기",
@@ -79,6 +81,7 @@
       "selectCategory": "카테고리",
       "selectSubcategory": "유형",
       "submitBtn": "검토 요청",
+      "link": "링크 (선택)",
       "successMessage": "글이 제출되었으며 승인 대기 중입니다."
     },
     "myPosts": {
