@@ -11,7 +11,8 @@ export default function SignupPage() {
   const [form, setForm] = useState({
     email: '', password: '', confirmPassword: '',
     name: '', nameKo: '', graduationYear: '', major: '',
-    location: '', company: '', title: '', birthday: '', bio: ''
+    location: '', company: '', title: '', birthday: '', bio: '',
+    privacyConsent: false, marketingConsent: false
   })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -25,6 +26,10 @@ export default function SignupPage() {
 
     if (!form.email || !form.password || !form.name) {
       setError(t('auth.errors.required'))
+      return
+    }
+    if (!form.privacyConsent) {
+      setError(t('auth.errors.privacyRequired'))
       return
     }
     if (form.password !== form.confirmPassword) {
@@ -167,6 +172,33 @@ export default function SignupPage() {
           <div>
             <label className="block text-sm font-medium text-charcoal mb-1.5">{t('auth.bio')}</label>
             <textarea value={form.bio} onChange={update('bio')} rows={3} className={inputClass + ' resize-none'} placeholder="Tell us a bit about yourself..." />
+          </div>
+
+          {/* Consent */}
+          <hr className="border-charcoal/10" />
+          <div className="space-y-3">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.privacyConsent}
+                onChange={(e) => setForm(prev => ({ ...prev, privacyConsent: e.target.checked }))}
+                className="mt-0.5 w-4 h-4 rounded border-charcoal/30 text-burnt-orange focus:ring-burnt-orange/30"
+              />
+              <span className="text-sm text-charcoal">
+                {t('auth.consent.privacy')} <span className="text-red-500">*</span>
+              </span>
+            </label>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.marketingConsent}
+                onChange={(e) => setForm(prev => ({ ...prev, marketingConsent: e.target.checked }))}
+                className="mt-0.5 w-4 h-4 rounded border-charcoal/30 text-burnt-orange focus:ring-burnt-orange/30"
+              />
+              <span className="text-sm text-charcoal-light">
+                {t('auth.consent.marketing')}
+              </span>
+            </label>
           </div>
 
           <button

@@ -6,10 +6,14 @@ import { sendVerificationEmail } from '@/lib/email'
 export async function POST(request) {
   try {
     const body = await request.json()
-    const { email, password, name, nameKo, graduationYear, major, location, company, title, bio, birthday } = body
+    const { email, password, name, nameKo, graduationYear, major, location, company, title, bio, birthday, privacyConsent, marketingConsent } = body
 
     if (!email || !password || !name) {
       return Response.json({ error: 'Email, password, and name are required' }, { status: 400 })
+    }
+
+    if (!privacyConsent) {
+      return Response.json({ error: 'Privacy consent is required' }, { status: 400 })
     }
 
     if (password.length < 8) {
@@ -26,9 +30,10 @@ export async function POST(request) {
     const verificationToken = crypto.randomBytes(32).toString('hex')
     const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
+    const now = new Date().toISOString()
     const { rows } = await sql`
-      INSERT INTO members (email, password_hash, name, name_ko, graduation_year, major, location, company, title, bio, birthday, email_verified, verification_token, verification_token_expires)
-      VALUES (${email}, ${passwordHash}, ${name}, ${nameKo || null}, ${graduationYear ? parseInt(graduationYear) : null}, ${major || null}, ${location || null}, ${company || null}, ${title || null}, ${bio || null}, ${birthday || null}, false, ${verificationToken}, ${tokenExpires.toISOString()})
+      INSERT INTO members (email, password_hash, name, name_ko, graduation_year, major, location, company, title, bio, birthday, email_verified, verification_token, verification_token_expires, privacy_consent, privacy_consent_date, marketing_consent, marketing_consent_date)
+      VALUES (${email}, ${passwordHash}, ${name}, ${nameKo || null}, ${graduationYear ? parseInt(graduationYear) : null}, ${major || null}, ${location || null}, ${company || null}, ${title || null}, ${bio || null}, ${birthday || null}, false, ${verificationToken}, ${tokenExpires.toISOString()}, ${true}, ${now}, ${!!marketingConsent}, ${marketingConsent ? now : null})
       RETURNING id, email, name
     `
 

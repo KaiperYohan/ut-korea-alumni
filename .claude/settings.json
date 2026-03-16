@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(vercel)",
+      "Bash(vercel:*)",
+      "Bash(xargs ls:*)",
+      "Bash(npx next:*)",
+      "Bash(npx vercel:*)",
+      "Bash(echo \"UT Korea Alumni <onboarding@resend.dev>\")",
+      "WebFetch(domain:www.utkorea.org)",
+      "Bash(echo \"UT Korea Alumni <noreply@utkorea.org>\")",
+      "Bash(npm run:*)",
+      "WebFetch(domain:www.sxsk.news)",
+      "Bash(python3 -c \"from datetime import datetime, timezone, timedelta; kst=datetime.now\\(timezone.utc\\)+timedelta\\(hours=9\\); print\\(f''KST now: {kst}, MMDD: {kst.strftime\\(\"\"%m%d\"\"\\)}''\\)\")",
+      "Bash(find c:Usersletmeut-korea-alumni/app -type f -name *.js -o -name *.jsx)",
+      "Bash(mkdir -p c:/Users/letme/ut-korea-alumni/app/api/members/[id])",
+      "Bash(mkdir -p c:/Users/letme/ut-korea-alumni/app/members/[id])"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\letme\\ut-korea-alumni\\app\\api\\admin\\submissions"
+    ]
+  }
+}

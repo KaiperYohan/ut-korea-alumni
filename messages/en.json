@@ -130,11 +130,16 @@
     "hasAccount": "Already have an account?",
     "forgotPassword": "Forgot password?",
     "pendingApproval": "Your account is pending admin approval. You'll receive access once approved.",
+    "consent": {
+      "privacy": "I agree to the collection and use of my personal information for alumni association membership and operations.",
+      "marketing": "I agree to receive event notifications, newsletters, and promotional communications. (Optional)"
+    },
     "errors": {
       "invalid": "Invalid email or password",
       "exists": "An account with this email already exists",
       "mismatch": "Passwords do not match",
       "required": "Please fill in all required fields",
+      "privacyRequired": "You must agree to the collection of personal information to sign up.",
       "emailNotVerified": "Please verify your email before signing in. Check your inbox for the verification link."
     }
   },

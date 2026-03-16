@@ -115,6 +115,10 @@ export async function GET(request) {
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS interests TEXT`
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS password_reset_token VARCHAR(255)`
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS password_reset_token_expires TIMESTAMP`
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS privacy_consent BOOLEAN DEFAULT false`
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS privacy_consent_date TIMESTAMP`
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS marketing_consent BOOLEAN DEFAULT false`
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS marketing_consent_date TIMESTAMP`
 
     // Auto-verify existing approved members
     await sql`UPDATE members SET email_verified = true WHERE is_approved = true AND email_verified = false`
