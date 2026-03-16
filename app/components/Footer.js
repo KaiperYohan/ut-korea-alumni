@@ -16,7 +16,7 @@ export default function Footer() {
           {/* Brand column */}
           <div className="md:col-span-2">
             <div className="flex items-center gap-2.5 mb-4">
-              <img src="/utkorea logo.png" alt="UT Korea Alumni" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+              <img src="/utkorea logo white.png" alt="UT Korea Alumni" className="w-9 h-9 object-contain flex-shrink-0" />
               <span className="font-display text-lg font-bold text-white">UT Austin Korea Alumni</span>
             </div>
             <p className="text-white/60 text-sm leading-relaxed max-w-sm">

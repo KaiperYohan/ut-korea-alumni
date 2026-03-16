@@ -127,7 +127,11 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
           <Link href="/" className={`flex items-center gap-2.5 ${logoColor} transition-colors no-underline`}>
-            <img src="/utkorea logo.png" alt="UT Korea Alumni" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+            <img
+              src={scrolled || !isHome ? '/utkorea logo.png' : '/utkorea logo white.png'}
+              alt="UT Korea Alumni"
+              className="w-10 h-10 object-contain flex-shrink-0"
+            />
             <div className="flex flex-col leading-none">
               <span className="font-display text-lg font-bold tracking-tight">UT Austin</span>
               <span className="text-[0.65rem] tracking-[0.15em] uppercase opacity-80 font-body">Korea Alumni</span>

@@ -11,7 +11,7 @@ export default function AboutPage() {
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="mb-12 text-center">
-          <img src="/utkorea logo.png" alt="UT Korea Alumni" className="w-16 h-16 rounded-full object-cover mx-auto mb-6" />
+          <img src="/utkorea logo.png" alt="UT Korea Alumni" className="w-16 h-16 object-contain mx-auto mb-6" />
           <h1 className="section-heading text-center">{t('about.title')}</h1>
           <p className="section-subheading mx-auto text-center">{t('about.subtitle')}</p>
         </div>
