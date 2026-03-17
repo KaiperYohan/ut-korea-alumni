@@ -100,6 +100,17 @@ export async function GET(request) {
       )
     `
 
+    // News comments table
+    await sql`
+      CREATE TABLE IF NOT EXISTS news_comments (
+        id SERIAL PRIMARY KEY,
+        news_id INTEGER REFERENCES news(id) ON DELETE CASCADE,
+        member_id INTEGER REFERENCES members(id) ON DELETE CASCADE,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `
+
     // Site settings table
     await sql`
       CREATE TABLE IF NOT EXISTS site_settings (

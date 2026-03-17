@@ -88,6 +88,14 @@
       "title": "My Posts",
       "subtitle": "View and manage your submissions",
       "noPosts": "You haven't submitted any posts yet."
+    },
+    "comments": {
+      "title": "Comments",
+      "placeholder": "Write a comment...",
+      "submit": "Post",
+      "noComments": "No comments yet. Be the first to comment!",
+      "loginRequired": "to leave a comment.",
+      "deleteConfirm": "Delete this comment?"
     }
   },
   "members": {

@@ -88,6 +88,14 @@
       "title": "내 글",
       "subtitle": "제출한 글을 확인하고 관리하세요",
       "noPosts": "아직 제출한 글이 없습니다."
+    },
+    "comments": {
+      "title": "댓글",
+      "placeholder": "댓글을 작성하세요...",
+      "submit": "등록",
+      "noComments": "아직 댓글이 없습니다. 첫 댓글을 남겨보세요!",
+      "loginRequired": "하여 댓글을 남기세요.",
+      "deleteConfirm": "이 댓글을 삭제하시겠습니까?"
     }
   },
   "members": {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { useT, useLanguage } from '../../components/LanguageProvider'
 
@@ -8,14 +9,26 @@ export default function NewsDetailPage({ params }) {
   const { id } = use(params)
   const t = useT()
   const { locale } = useLanguage()
+  const { data: session } = useSession()
   const [article, setArticle] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [comments, setComments] = useState([])
+  const [newComment, setNewComment] = useState('')
+  const [submittingComment, setSubmittingComment] = useState(false)
+
+  const fetchComments = () => {
+    fetch(`/api/news/${id}/comments`)
+      .then(r => r.json())
+      .then(data => setComments(data.comments || []))
+      .catch(() => {})
+  }
 
   useEffect(() => {
     fetch(`/api/news/${id}`)
       .then(r => r.json())
       .then(data => { setArticle(data.article); setLoading(false) })
       .catch(() => setLoading(false))
+    fetchComments()
   }, [id])
 
   if (loading) {
@@ -124,6 +137,96 @@ export default function NewsDetailPage({ params }) {
             </a>
           )}
         </article>
+
+        {/* Comments Section */}
+        <div className="mt-8">
+          <h3 className="font-display text-lg font-semibold text-charcoal mb-4">
+            {t('news.comments.title')} ({comments.length})
+          </h3>
+
+          {/* Comment Form */}
+          {session ? (
+            <form onSubmit={async (e) => {
+              e.preventDefault()
+              if (!newComment.trim()) return
+              setSubmittingComment(true)
+              const res = await fetch(`/api/news/${id}/comments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: newComment }),
+              })
+              if (res.ok) {
+                setNewComment('')
+                fetchComments()
+              }
+              setSubmittingComment(false)
+            }} className="card p-4 mb-6">
+              <textarea
+                value={newComment}
+                onChange={e => setNewComment(e.target.value)}
+                rows={3}
+                placeholder={t('news.comments.placeholder')}
+                className="w-full px-3 py-2 rounded-lg border border-charcoal/15 bg-white text-charcoal text-sm focus:outline-none focus:ring-2 focus:ring-burnt-orange/30 focus:border-burnt-orange resize-none"
+              />
+              <div className="flex justify-end mt-2">
+                <button
+                  type="submit"
+                  disabled={submittingComment || !newComment.trim()}
+                  className="btn-primary text-sm"
+                >
+                  {submittingComment ? t('common.loading') : t('news.comments.submit')}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="card p-4 mb-6 text-center text-sm text-charcoal-light">
+              <Link href="/login" className="text-burnt-orange font-semibold no-underline hover:underline">{t('nav.login')}</Link>
+              {' '}{t('news.comments.loginRequired')}
+            </div>
+          )}
+
+          {/* Comments List */}
+          {comments.length === 0 ? (
+            <div className="text-sm text-charcoal-light text-center py-6">{t('news.comments.noComments')}</div>
+          ) : (
+            <div className="space-y-4">
+              {comments.map(comment => (
+                <div key={comment.id} className="card p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      {comment.profile_image_url ? (
+                        <img src={comment.profile_image_url} alt="" className="w-7 h-7 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-burnt-orange/20 text-burnt-orange text-xs font-bold flex items-center justify-center">
+                          {(comment.name || '?')[0]}
+                        </div>
+                      )}
+                      <span className="text-sm font-semibold text-charcoal">
+                        {locale === 'ko' && comment.name_ko ? comment.name_ko : comment.name}
+                      </span>
+                      <span className="text-xs text-charcoal-light">
+                        {new Date(comment.created_at).toLocaleDateString(locale === 'ko' ? 'ko-KR' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Seoul' })}
+                      </span>
+                    </div>
+                    {session && (String(comment.member_id) === session.user.id || session.user.isAdmin) && (
+                      <button
+                        onClick={async () => {
+                          if (!confirm(t('news.comments.deleteConfirm'))) return
+                          await fetch(`/api/news/${id}/comments?commentId=${comment.id}`, { method: 'DELETE' })
+                          fetchComments()
+                        }}
+                        className="text-xs text-red-500 hover:text-red-700 cursor-pointer bg-transparent border-none"
+                      >
+                        {t('common.delete')}
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-sm text-charcoal leading-relaxed whitespace-pre-wrap">{comment.content}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
