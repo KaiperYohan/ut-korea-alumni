@@ -146,6 +146,10 @@ export async function GET(request) {
     await sql`ALTER TABLE news ADD COLUMN IF NOT EXISTS external_url TEXT`
     await sql`ALTER TABLE news ADD COLUMN IF NOT EXISTS external_url_ko TEXT`
 
+    // One-time cleanup: remove sample events
+    await sql`DELETE FROM event_rsvps`
+    await sql`DELETE FROM events`
+
     return Response.json({ success: true, message: 'All tables created successfully' })
   } catch (error) {
     console.error('DB init error:', error)
