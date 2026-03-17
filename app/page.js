@@ -21,7 +21,7 @@ export default function Home() {
     }).catch(() => {})
     fetch('/api/events').then(r => r.json()).then(d => {
       const now = new Date()
-      const upcoming = (d.events || []).filter(e => new Date(e.event_date) >= now).slice(0, 3)
+      const upcoming = (d.events || []).filter(e => new Date(e.event_date) >= now).sort((a, b) => new Date(a.event_date) - new Date(b.event_date)).slice(0, 3)
       setUpcomingEvents(upcoming)
     }).catch(() => {})
   }, [])

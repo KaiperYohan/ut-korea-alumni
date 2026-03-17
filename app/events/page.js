@@ -18,7 +18,7 @@ export default function EventsPage() {
   }, [])
 
   const now = new Date()
-  const upcoming = events.filter(e => new Date(e.event_date) >= now)
+  const upcoming = events.filter(e => new Date(e.event_date) >= now).sort((a, b) => new Date(a.event_date) - new Date(b.event_date))
   const past = events.filter(e => new Date(e.event_date) < now)
 
   const KST = 'Asia/Seoul'
