@@ -545,7 +545,7 @@ export default function AdminPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-charcoal mb-1">Date & Time (KST) *</label>
-                  <input type="datetime-local" value={eventForm.eventDate} onChange={e => setEventForm(p => ({ ...p, eventDate: e.target.value }))} required className={inputClass} />
+                  <input type="datetime-local" step="1800" value={eventForm.eventDate} onChange={e => setEventForm(p => ({ ...p, eventDate: e.target.value }))} required className={inputClass} />
                   <label className="flex items-center gap-2 mt-1.5 cursor-pointer">
                     <input type="checkbox" checked={eventForm.timeTba} onChange={e => setEventForm(p => ({ ...p, timeTba: e.target.checked }))} className="rounded" />
                     <span className="text-xs text-charcoal-light">Time TBA (show date only)</span>
