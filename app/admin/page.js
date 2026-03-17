@@ -81,7 +81,8 @@ export default function AdminPage() {
     e.preventDefault()
     const url = editingEvent ? `/api/events/${editingEvent}` : '/api/events'
     const method = editingEvent ? 'PUT' : 'POST'
-    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(eventForm) })
+    const payload = { ...eventForm, eventDate: eventForm.eventDate ? eventForm.eventDate + ':00+09:00' : '' }
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
       alert(data.error || 'Failed to save event')
@@ -467,7 +468,7 @@ export default function AdminPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-charcoal mb-1">Date & Time *</label>
+                  <label className="block text-xs font-medium text-charcoal mb-1">Date & Time (KST) *</label>
                   <input type="datetime-local" value={eventForm.eventDate} onChange={e => setEventForm(p => ({ ...p, eventDate: e.target.value }))} required className={inputClass} />
                 </div>
                 <div>

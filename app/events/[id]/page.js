@@ -75,7 +75,7 @@ export default function EventDetailPage({ params }) {
           {/* Date header */}
           <div className="bg-gradient-to-r from-burnt-orange to-burnt-dark p-6 md:p-8 text-white">
             <div className="text-sm font-semibold opacity-80 uppercase tracking-wider mb-1">
-              {eventDate.toLocaleDateString(locale === 'ko' ? 'ko-KR' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              {eventDate.toLocaleDateString(locale === 'ko' ? 'ko-KR' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Seoul' })}
             </div>
             <h1 className="font-display text-2xl md:text-3xl font-bold">
               {locale === 'ko' && event.title_ko ? event.title_ko : event.title}
@@ -90,7 +90,7 @@ export default function EventDetailPage({ params }) {
             <div className="flex flex-wrap gap-6 mb-8 text-sm text-charcoal-light">
               <div className="flex items-center gap-2">
                 <svg className="w-5 h-5 text-burnt-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                {eventDate.toLocaleTimeString(locale === 'ko' ? 'ko-KR' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
+                {eventDate.toLocaleTimeString(locale === 'ko' ? 'ko-KR' : 'en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Seoul' })} KST
               </div>
               {(event.location || event.location_ko) && (
                 <div className="flex items-center gap-2">

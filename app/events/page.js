@@ -21,20 +21,23 @@ export default function EventsPage() {
   const upcoming = events.filter(e => new Date(e.event_date) >= now)
   const past = events.filter(e => new Date(e.event_date) < now)
 
+  const KST = 'Asia/Seoul'
+
   const formatDate = (dateStr) => {
     const d = new Date(dateStr)
     return locale === 'ko'
-      ? `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`
-      : d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+      ? d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', timeZone: KST })
+      : d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: KST })
   }
 
   const formatTime = (dateStr) => {
     const d = new Date(dateStr)
-    return d.toLocaleTimeString(locale === 'ko' ? 'ko-KR' : 'en-US', { hour: '2-digit', minute: '2-digit' })
+    const time = d.toLocaleTimeString(locale === 'ko' ? 'ko-KR' : 'en-US', { hour: '2-digit', minute: '2-digit', timeZone: KST })
+    return `${time} KST`
   }
 
-  const getMonth = (dateStr) => new Date(dateStr).toLocaleDateString('en-US', { month: 'short' }).toUpperCase()
-  const getDay = (dateStr) => new Date(dateStr).getDate()
+  const getMonth = (dateStr) => new Date(dateStr).toLocaleDateString('en-US', { month: 'short', timeZone: KST }).toUpperCase()
+  const getDay = (dateStr) => new Date(dateStr).toLocaleDateString('en-US', { day: 'numeric', timeZone: KST })
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-5 md:px-8">
