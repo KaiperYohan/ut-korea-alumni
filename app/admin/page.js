@@ -21,7 +21,7 @@ export default function AdminPage() {
   const [settingsSaving, setSettingsSaving] = useState(false)
 
   // Event form state
-  const [eventForm, setEventForm] = useState({ title: '', titleKo: '', description: '', descriptionKo: '', eventDate: '', location: '', locationKo: '', maxAttendees: '', externalUrl: '', imageUrl: '' })
+  const [eventForm, setEventForm] = useState({ title: '', titleKo: '', description: '', descriptionKo: '', eventDate: '', location: '', locationKo: '', maxAttendees: '', externalUrl: '', imageUrl: '', timeTba: false, locationTba: false })
   const [editingEvent, setEditingEvent] = useState(null)
   const [uploadingEventImage, setUploadingEventImage] = useState(false)
 
@@ -144,7 +144,7 @@ export default function AdminPage() {
       alert(data.error || 'Failed to save event')
       return
     }
-    setEventForm({ title: '', titleKo: '', description: '', descriptionKo: '', eventDate: '', location: '', locationKo: '', maxAttendees: '', externalUrl: '', imageUrl: '' })
+    setEventForm({ title: '', titleKo: '', description: '', descriptionKo: '', eventDate: '', location: '', locationKo: '', maxAttendees: '', externalUrl: '', imageUrl: '', timeTba: false, locationTba: false })
     setEditingEvent(null)
     fetchAll()
   }
@@ -155,6 +155,7 @@ export default function AdminPage() {
       title: event.title, titleKo: event.title_ko || '', description: event.description || '', descriptionKo: event.description_ko || '',
       eventDate: event.event_date?.slice(0, 16) || '', location: event.location || '', locationKo: event.location_ko || '', maxAttendees: event.max_attendees || '',
       externalUrl: event.external_url || '', imageUrl: event.image_url || '',
+      timeTba: event.time_tba || false, locationTba: event.location_tba || false,
     })
   }
 
@@ -538,6 +539,10 @@ export default function AdminPage() {
                 <div>
                   <label className="block text-xs font-medium text-charcoal mb-1">Date & Time (KST) *</label>
                   <input type="datetime-local" value={eventForm.eventDate} onChange={e => setEventForm(p => ({ ...p, eventDate: e.target.value }))} required className={inputClass} />
+                  <label className="flex items-center gap-2 mt-1.5 cursor-pointer">
+                    <input type="checkbox" checked={eventForm.timeTba} onChange={e => setEventForm(p => ({ ...p, timeTba: e.target.checked }))} className="rounded" />
+                    <span className="text-xs text-charcoal-light">Time TBA (show date only)</span>
+                  </label>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-charcoal mb-1">Max Attendees</label>
@@ -547,13 +552,17 @@ export default function AdminPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-charcoal mb-1">Location (EN)</label>
-                  <input type="text" value={eventForm.location} onChange={e => setEventForm(p => ({ ...p, location: e.target.value }))} className={inputClass} />
+                  <input type="text" value={eventForm.location} onChange={e => setEventForm(p => ({ ...p, location: e.target.value }))} className={inputClass} disabled={eventForm.locationTba} />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-charcoal mb-1">Location (KO)</label>
-                  <input type="text" value={eventForm.locationKo} onChange={e => setEventForm(p => ({ ...p, locationKo: e.target.value }))} className={inputClass} />
+                  <input type="text" value={eventForm.locationKo} onChange={e => setEventForm(p => ({ ...p, locationKo: e.target.value }))} className={inputClass} disabled={eventForm.locationTba} />
                 </div>
               </div>
+              <label className="flex items-center gap-2 cursor-pointer -mt-2">
+                <input type="checkbox" checked={eventForm.locationTba} onChange={e => setEventForm(p => ({ ...p, locationTba: e.target.checked }))} className="rounded" />
+                <span className="text-xs text-charcoal-light">Location TBA</span>
+              </label>
               <div>
                 <label className="block text-xs font-medium text-charcoal mb-1">Description (EN)</label>
                 <textarea value={eventForm.description} onChange={e => setEventForm(p => ({ ...p, description: e.target.value }))} rows={3} className={inputClass + ' resize-none'} />
@@ -582,7 +591,7 @@ export default function AdminPage() {
               <div className="flex gap-3">
                 <button type="submit" className="btn-primary text-sm">{editingEvent ? 'Update' : 'Create'} Event</button>
                 {editingEvent && (
-                  <button type="button" onClick={() => { setEditingEvent(null); setEventForm({ title: '', titleKo: '', description: '', descriptionKo: '', eventDate: '', location: '', locationKo: '', maxAttendees: '' }) }} className="btn-secondary text-sm">Cancel</button>
+                  <button type="button" onClick={() => { setEditingEvent(null); setEventForm({ title: '', titleKo: '', description: '', descriptionKo: '', eventDate: '', location: '', locationKo: '', maxAttendees: '', externalUrl: '', imageUrl: '', timeTba: false, locationTba: false }) }} className="btn-secondary text-sm">Cancel</button>
                 )}
               </div>
             </form>
