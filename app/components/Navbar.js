@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { useLanguage, useT } from './LanguageProvider'
+import NoticeBanner from './NoticeBanner'
 
 function DropdownMenu({ label, items, isActive, textColor }) {
   const [open, setOpen] = useState(false)
@@ -219,6 +220,9 @@ export default function Navbar() {
           </button>
         </div>
       </div>
+
+      {/* Notice banner */}
+      <NoticeBanner />
 
       {/* Mobile menu */}
       {mobileOpen && (

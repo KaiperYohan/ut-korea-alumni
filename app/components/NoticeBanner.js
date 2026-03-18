@@ -27,7 +27,7 @@ export default function NoticeBanner() {
   if (!text) return null
 
   return (
-    <div className="sticky top-16 z-40 bg-burnt-orange text-white text-center text-sm py-2 px-10 relative">
+    <div className="bg-burnt-orange text-white text-center text-sm py-1.5 px-10 relative">
       <span>{text}</span>
       <button
         onClick={() => setDismissed(true)}

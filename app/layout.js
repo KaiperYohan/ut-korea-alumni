@@ -1,6 +1,5 @@
 import './globals.css'
 import Navbar from './components/Navbar'
-import NoticeBanner from './components/NoticeBanner'
 import Footer from './components/Footer'
 import { LanguageProvider } from './components/LanguageProvider'
 import SessionProvider from './components/SessionProvider'
@@ -28,7 +27,6 @@ export default function RootLayout({ children }) {
         <SessionProvider>
           <LanguageProvider>
             <Navbar />
-            <NoticeBanner />
             <main className="flex-1">
               {children}
             </main>
