@@ -42,6 +42,7 @@ async function fetchRssPage(url) {
 }
 
 async function fetchAllRss(baseUrl) {
+  const seen = new Set()
   let allItems = []
   let page = 1
   while (true) {
@@ -49,12 +50,20 @@ async function fetchAllRss(baseUrl) {
     try {
       const items = await fetchRssPage(url)
       if (items.length === 0) break
-      allItems = allItems.concat(items)
+      let newCount = 0
+      for (const item of items) {
+        const link = item.link
+        if (link && !seen.has(link)) {
+          seen.add(link)
+          allItems.push(item)
+          newCount++
+        }
+      }
+      // If all items on this page were duplicates, stop
+      if (newCount === 0) break
       page++
-      // Safety limit to avoid infinite loops
       if (page > 50) break
     } catch {
-      // No more pages or invalid response
       break
     }
   }
@@ -212,12 +221,14 @@ export async function POST() {
       const externalUrl = enUrl || koUrl
       const externalUrlKo = koUrl || null
       const pubDate = en ? en.pubDate : ko.pubDate
-      const author = en?.['dc:creator'] || ko?.['dc:creator'] || 'SXSK'
 
       await sql`
         INSERT INTO news (title, title_ko, content, content_ko, external_url, external_url_ko, category, approval_status, published, created_at, updated_at)
         VALUES (${title}, ${titleKo}, ${content}, ${contentKo}, ${externalUrl}, ${externalUrlKo}, 'news', 'approved', true, ${new Date(pubDate).toISOString()}, NOW())
       `
+      // Track newly inserted URLs to prevent duplicates within this run
+      if (enUrl) existingUrls.add(enUrl)
+      if (koUrl) existingUrls.add(koUrl)
       imported++
     }
 
