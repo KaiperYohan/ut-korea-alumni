@@ -182,7 +182,7 @@ export async function DELETE() {
 
   try {
     const { rows } = await sql`
-      DELETE FROM news WHERE external_url IS NOT NULL AND category = 'news'
+      DELETE FROM news WHERE external_url IS NOT NULL AND category IN ('news', 'sxsk', 'utaka_news')
       RETURNING id
     `
     return Response.json({ success: true, deleted: rows.length })
@@ -273,9 +273,18 @@ export async function POST() {
       const externalUrlKo = ko ? koUrl : null
       const pubDate = en?.pubDate || ko?.pubDate || new Date().toISOString()
 
+      // Categorize based on title section
+      const refTitle = (en?.title || ko?.title || '').toLowerCase()
+      let category = 'sxsk'
+      if (/\[utaka\s*news\]|\[utaka\s*소식\]|utaka\s*sosig/.test(refTitle)) {
+        category = 'utaka_news'
+      } else if (/\[ut\s*member\s*interview\]|\[ut\s*구성원\s*인터뷰\]|ut-guseongweon-inteobyu/.test(refTitle)) {
+        category = 'members_news'
+      }
+
       await sql`
         INSERT INTO news (title, title_ko, content, content_ko, external_url, external_url_ko, category, approval_status, published, created_at, updated_at)
-        VALUES (${title}, ${titleKo}, ${content}, ${contentKo}, ${externalUrl}, ${externalUrlKo}, 'news', 'approved', true, ${new Date(pubDate).toISOString()}, NOW())
+        VALUES (${title}, ${titleKo}, ${content}, ${contentKo}, ${externalUrl}, ${externalUrlKo}, ${category}, 'approved', true, ${new Date(pubDate).toISOString()}, NOW())
       `
       if (enUrl) existingUrls.add(enUrl)
       if (koUrl) existingUrls.add(koUrl)

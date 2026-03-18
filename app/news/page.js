@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useT, useLanguage } from '../components/LanguageProvider'
 
-const CATEGORIES = ['news', 'members_news', 'pr']
+const CATEGORIES = ['utaka_news', 'members_news', 'sxsk', 'pr']
 const SUBCATEGORIES = ['marriage', 'birth', 'death', 'promotion', 'job_change', 'seeking_employment', 'birthday']
 
 export default function NewsPage() {
@@ -12,7 +12,7 @@ export default function NewsPage() {
   const { locale } = useLanguage()
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(true)
-  const [activeCategory, setActiveCategory] = useState('news')
+  const [activeCategory, setActiveCategory] = useState('utaka_news')
   const [activeSubcategory, setActiveSubcategory] = useState('')
 
   useEffect(() => {
@@ -34,8 +34,9 @@ export default function NewsPage() {
 
   const categoryLabel = (cat) => {
     const labels = {
-      news: t('news.categories.news'),
+      utaka_news: t('news.categories.utakaNews'),
       members_news: t('news.categories.membersNews'),
+      sxsk: t('news.categories.sxsk'),
       pr: t('news.categories.pr'),
     }
     return labels[cat] || cat
@@ -126,9 +127,12 @@ export default function NewsPage() {
                   </div>
                   <div className="flex-1 p-5 md:p-6">
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      {article.category && article.category !== 'news' && (
+                      {article.category && (
                         <span className={`text-[0.6rem] font-bold px-1.5 py-0.5 rounded uppercase ${
-                          article.category === 'members_news' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                          article.category === 'utaka_news' ? 'bg-orange-100 text-orange-800' :
+                          article.category === 'members_news' ? 'bg-blue-100 text-blue-800' :
+                          article.category === 'sxsk' ? 'bg-green-100 text-green-800' :
+                          'bg-purple-100 text-purple-800'
                         }`}>
                           {categoryLabel(article.category)}
                         </span>

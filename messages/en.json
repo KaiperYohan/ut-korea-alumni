@@ -53,8 +53,9 @@
     "by": "By",
     "published": "Published",
     "categories": {
-      "news": "News",
+      "utakaNews": "UTAKA News",
       "membersNews": "Members News",
+      "sxsk": "SXSK",
       "pr": "PR"
     },
     "subcategories": {

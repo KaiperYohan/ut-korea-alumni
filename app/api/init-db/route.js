@@ -159,6 +159,9 @@ export async function GET(request) {
     await sql`ALTER TABLE news ADD COLUMN IF NOT EXISTS external_url TEXT`
     await sql`ALTER TABLE news ADD COLUMN IF NOT EXISTS external_url_ko TEXT`
 
+    // Migrate old 'news' category to 'sxsk'
+    await sql`UPDATE news SET category = 'sxsk' WHERE category = 'news'`
+
     return Response.json({ success: true, message: 'All tables created successfully' })
   } catch (error) {
     console.error('DB init error:', error)

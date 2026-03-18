@@ -43,7 +43,7 @@ export default function MyPostsPage() {
   }
 
   const categoryLabel = (cat) => {
-    const labels = { members_news: t('news.categories.membersNews'), pr: t('news.categories.pr') }
+    const labels = { utaka_news: t('news.categories.utakaNews'), members_news: t('news.categories.membersNews'), sxsk: t('news.categories.sxsk'), pr: t('news.categories.pr') }
     return labels[cat] || cat
   }
 
@@ -87,7 +87,10 @@ export default function MyPostsPage() {
                       {locale === 'ko' && post.title_ko ? post.title_ko : post.title}
                     </h4>
                     <span className={`text-[0.6rem] font-bold px-1.5 py-0.5 rounded uppercase ${
-                      post.category === 'members_news' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                      post.category === 'utaka_news' ? 'bg-orange-100 text-orange-800' :
+                      post.category === 'members_news' ? 'bg-blue-100 text-blue-800' :
+                      post.category === 'sxsk' ? 'bg-green-100 text-green-800' :
+                      'bg-purple-100 text-purple-800'
                     }`}>
                       {categoryLabel(post.category)}
                     </span>

@@ -47,7 +47,7 @@ export default function NewsDetailPage({ params }) {
   }
 
   const categoryLabel = (cat) => {
-    const labels = { news: t('news.categories.news'), members_news: t('news.categories.membersNews'), pr: t('news.categories.pr') }
+    const labels = { utaka_news: t('news.categories.utakaNews'), members_news: t('news.categories.membersNews'), sxsk: t('news.categories.sxsk'), pr: t('news.categories.pr') }
     return labels[cat] || cat
   }
 
@@ -68,10 +68,13 @@ export default function NewsDetailPage({ params }) {
 
         <article className="card p-8 md:p-10">
           {/* Category badges */}
-          {article.category && article.category !== 'news' && (
+          {article.category && (
             <div className="flex items-center gap-2 mb-3">
               <span className={`text-xs font-bold px-2 py-0.5 rounded uppercase ${
-                article.category === 'members_news' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                article.category === 'utaka_news' ? 'bg-orange-100 text-orange-800' :
+                article.category === 'members_news' ? 'bg-blue-100 text-blue-800' :
+                article.category === 'sxsk' ? 'bg-green-100 text-green-800' :
+                'bg-purple-100 text-purple-800'
               }`}>
                 {categoryLabel(article.category)}
               </span>

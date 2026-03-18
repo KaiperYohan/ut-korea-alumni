@@ -5,7 +5,7 @@ import { canWritePost } from '@/lib/permissions'
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
-  const category = searchParams.get('category') || 'news'
+  const category = searchParams.get('category') || 'utaka_news'
   const subcategory = searchParams.get('subcategory') || ''
 
   let result
@@ -56,14 +56,15 @@ export async function POST(request) {
   const isAdmin = session.user.isAdmin
   const membershipLevel = session.user.membershipLevel
 
-  // Admin creating news articles
-  if (category === 'news' || !category) {
+  // Admin creating SXSK or UTAKA News articles
+  if (category === 'sxsk' || category === 'utaka_news' || !category) {
     if (!isAdmin) {
-      return Response.json({ error: 'Only admins can create news articles' }, { status: 403 })
+      return Response.json({ error: 'Only admins can create SXSK/UTAKA News articles' }, { status: 403 })
     }
+    const cat = category || 'sxsk'
     const { rows } = await sql`
       INSERT INTO news (title, title_ko, content, content_ko, author_id, image_url, published, category, external_url, approval_status)
-      VALUES (${title}, ${titleKo || null}, ${content}, ${contentKo || null}, ${parseInt(session.user.id)}, ${imageUrl || null}, ${published || false}, 'news', ${externalUrl || null}, 'approved')
+      VALUES (${title}, ${titleKo || null}, ${content}, ${contentKo || null}, ${parseInt(session.user.id)}, ${imageUrl || null}, ${published || false}, ${cat}, ${externalUrl || null}, 'approved')
       RETURNING *
     `
     return Response.json({ article: rows[0] })

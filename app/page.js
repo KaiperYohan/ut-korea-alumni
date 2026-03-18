@@ -26,7 +26,7 @@ export default function Home() {
       const upcoming = (d.events || []).filter(e => new Date(e.event_date) >= now).sort((a, b) => new Date(a.event_date) - new Date(b.event_date)).slice(0, 3)
       setUpcomingEvents(upcoming)
     }).catch(() => {})
-    fetch('/api/news').then(r => r.json()).then(d => {
+    fetch('/api/news?category=all').then(r => r.json()).then(d => {
       setLatestNews((d.articles || []).slice(0, 3))
     }).catch(() => {})
   }, [])

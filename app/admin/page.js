@@ -29,7 +29,7 @@ export default function AdminPage() {
   const [translatingNews, setTranslatingNews] = useState(false)
 
   // News form state
-  const [newsForm, setNewsForm] = useState({ title: '', titleKo: '', content: '', contentKo: '', published: false, category: 'news', externalUrl: '' })
+  const [newsForm, setNewsForm] = useState({ title: '', titleKo: '', content: '', contentKo: '', published: false, category: 'sxsk', externalUrl: '' })
   const [editingNews, setEditingNews] = useState(null)
 
   useEffect(() => {
@@ -193,7 +193,7 @@ export default function AdminPage() {
     const url = editingNews ? `/api/news/${editingNews}` : '/api/news'
     const method = editingNews ? 'PUT' : 'POST'
     await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newsForm) })
-    setNewsForm({ title: '', titleKo: '', content: '', contentKo: '', published: false, category: 'news', externalUrl: '' })
+    setNewsForm({ title: '', titleKo: '', content: '', contentKo: '', published: false, category: 'sxsk', externalUrl: '' })
     setEditingNews(null)
     fetchAll()
   }
@@ -202,7 +202,7 @@ export default function AdminPage() {
     setEditingNews(article.id)
     setNewsForm({
       title: article.title, titleKo: article.title_ko || '', content: article.content, contentKo: article.content_ko || '',
-      published: article.published, category: article.category || 'news', externalUrl: article.external_url || '',
+      published: article.published, category: article.category || 'sxsk', externalUrl: article.external_url || '',
     })
   }
 
@@ -355,7 +355,7 @@ export default function AdminPage() {
     { id: 'members', label: `Members ${pendingCount > 0 ? `(${pendingCount})` : ''}` },
     { id: 'submissions', label: `Submissions ${pendingSubmissions > 0 ? `(${pendingSubmissions})` : ''}` },
     { id: 'events', label: 'Events' },
-    { id: 'news', label: 'News' },
+    { id: 'news', label: 'News/SXSK' },
     { id: 'org', label: 'Organization' },
     { id: 'settings', label: 'Settings' },
   ]
@@ -489,9 +489,14 @@ export default function AdminPage() {
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <h4 className="font-semibold text-charcoal text-sm">{sub.title}</h4>
                       <span className={`text-[0.6rem] font-bold px-1.5 py-0.5 rounded uppercase ${
-                        sub.category === 'members_news' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                        sub.category === 'utaka_news' ? 'bg-orange-100 text-orange-800' :
+                        sub.category === 'members_news' ? 'bg-blue-100 text-blue-800' :
+                        sub.category === 'sxsk' ? 'bg-green-100 text-green-800' :
+                        'bg-purple-100 text-purple-800'
                       }`}>
-                        {sub.category === 'members_news' ? 'Members News' : 'PR'}
+                        {sub.category === 'utaka_news' ? 'UTAKA News' :
+                         sub.category === 'members_news' ? 'Members News' :
+                         sub.category === 'sxsk' ? 'SXSK' : 'PR'}
                       </span>
                       {sub.subcategory && (
                         <span className="text-[0.6rem] font-bold bg-charcoal/10 text-charcoal-light px-1.5 py-0.5 rounded uppercase">
@@ -701,7 +706,7 @@ export default function AdminPage() {
               <div className="flex gap-3">
                 <button type="submit" className="btn-primary text-sm">{editingNews ? 'Update' : 'Create'} Article</button>
                 {editingNews && (
-                  <button type="button" onClick={() => { setEditingNews(null); setNewsForm({ title: '', titleKo: '', content: '', contentKo: '', published: false, category: 'news', externalUrl: '' }) }} className="btn-secondary text-sm">Cancel</button>
+                  <button type="button" onClick={() => { setEditingNews(null); setNewsForm({ title: '', titleKo: '', content: '', contentKo: '', published: false, category: 'sxsk', externalUrl: '' }) }} className="btn-secondary text-sm">Cancel</button>
                 )}
               </div>
             </form>
@@ -714,10 +719,17 @@ export default function AdminPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="font-semibold text-charcoal text-sm">{article.title}</h4>
                       {!article.published && <span className="text-[0.6rem] font-bold bg-charcoal/10 text-charcoal px-1.5 py-0.5 rounded uppercase">Draft</span>}
-                      {article.category && article.category !== 'news' && (
+                      {article.category && (
                         <span className={`text-[0.6rem] font-bold px-1.5 py-0.5 rounded uppercase ${
-                          article.category === 'members_news' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
-                        }`}>{article.category === 'members_news' ? 'Members News' : 'PR'}</span>
+                          article.category === 'utaka_news' ? 'bg-orange-100 text-orange-800' :
+                          article.category === 'members_news' ? 'bg-blue-100 text-blue-800' :
+                          article.category === 'sxsk' ? 'bg-green-100 text-green-800' :
+                          'bg-purple-100 text-purple-800'
+                        }`}>{
+                          article.category === 'utaka_news' ? 'UTAKA News' :
+                          article.category === 'members_news' ? 'Members News' :
+                          article.category === 'sxsk' ? 'SXSK' : 'PR'
+                        }</span>
                       )}
                       {article.approval_status === 'pending' && <span className="text-[0.6rem] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded uppercase">Pending</span>}
                       {article.approval_status === 'rejected' && <span className="text-[0.6rem] font-bold bg-red-100 text-red-800 px-1.5 py-0.5 rounded uppercase">Rejected</span>}

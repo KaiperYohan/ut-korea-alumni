@@ -53,8 +53,9 @@
     "by": "작성자",
     "published": "게시일",
     "categories": {
-      "news": "뉴스",
+      "utakaNews": "UTAKA 소식",
       "membersNews": "회원 소식",
+      "sxsk": "SXSK",
       "pr": "홍보"
     },
     "subcategories": {
