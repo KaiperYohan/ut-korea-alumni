@@ -29,7 +29,7 @@ export default function AdminPage() {
   const [translatingNews, setTranslatingNews] = useState(false)
 
   // News form state
-  const [newsForm, setNewsForm] = useState({ title: '', titleKo: '', content: '', contentKo: '', published: false, category: 'sxsk', externalUrl: '' })
+  const [newsForm, setNewsForm] = useState({ title: '', titleKo: '', content: '', contentKo: '', published: false, category: 'utaka_news', externalUrl: '' })
   const [editingNews, setEditingNews] = useState(null)
 
   useEffect(() => {
@@ -193,7 +193,7 @@ export default function AdminPage() {
     const url = editingNews ? `/api/news/${editingNews}` : '/api/news'
     const method = editingNews ? 'PUT' : 'POST'
     await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newsForm) })
-    setNewsForm({ title: '', titleKo: '', content: '', contentKo: '', published: false, category: 'sxsk', externalUrl: '' })
+    setNewsForm({ title: '', titleKo: '', content: '', contentKo: '', published: false, category: 'utaka_news', externalUrl: '' })
     setEditingNews(null)
     fetchAll()
   }
@@ -202,7 +202,7 @@ export default function AdminPage() {
     setEditingNews(article.id)
     setNewsForm({
       title: article.title, titleKo: article.title_ko || '', content: article.content, contentKo: article.content_ko || '',
-      published: article.published, category: article.category || 'sxsk', externalUrl: article.external_url || '',
+      published: article.published, category: article.category || 'utaka_news', externalUrl: article.external_url || '',
     })
   }
 
@@ -687,9 +687,18 @@ export default function AdminPage() {
                   <input type="text" value={newsForm.titleKo} onChange={e => setNewsForm(p => ({ ...p, titleKo: e.target.value }))} className={inputClass} />
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-charcoal mb-1">External URL (sxsk.news link)</label>
-                <input type="url" value={newsForm.externalUrl} onChange={e => setNewsForm(p => ({ ...p, externalUrl: e.target.value }))} placeholder="https://sxsk.news/..." className={inputClass} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-charcoal mb-1">Category</label>
+                  <select value={newsForm.category} onChange={e => setNewsForm(p => ({ ...p, category: e.target.value }))} className={inputClass}>
+                    <option value="utaka_news">UTAKA News</option>
+                    <option value="sxsk">SXSK</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-charcoal mb-1">External URL</label>
+                  <input type="url" value={newsForm.externalUrl} onChange={e => setNewsForm(p => ({ ...p, externalUrl: e.target.value }))} placeholder="https://..." className={inputClass} />
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-charcoal mb-1">Content (EN) *</label>
@@ -706,7 +715,7 @@ export default function AdminPage() {
               <div className="flex gap-3">
                 <button type="submit" className="btn-primary text-sm">{editingNews ? 'Update' : 'Create'} Article</button>
                 {editingNews && (
-                  <button type="button" onClick={() => { setEditingNews(null); setNewsForm({ title: '', titleKo: '', content: '', contentKo: '', published: false, category: 'sxsk', externalUrl: '' }) }} className="btn-secondary text-sm">Cancel</button>
+                  <button type="button" onClick={() => { setEditingNews(null); setNewsForm({ title: '', titleKo: '', content: '', contentKo: '', published: false, category: 'utaka_news', externalUrl: '' }) }} className="btn-secondary text-sm">Cancel</button>
                 )}
               </div>
             </form>
