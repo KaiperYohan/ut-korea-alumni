@@ -13,8 +13,8 @@ export default function NoticeBanner() {
       .then(r => r.json())
       .then(d => {
         if (d.settings) {
-          const en = d.settings.notice || ''
-          const ko = d.settings.notice_ko || ''
+          const en = (d.settings.notice || '').trim()
+          const ko = (d.settings.notice_ko || '').trim()
           if (en || ko) setNotice({ en, ko })
         }
       })
@@ -23,8 +23,8 @@ export default function NoticeBanner() {
 
   if (!notice || dismissed) return null
 
-  const text = locale === 'ko' && notice.ko ? notice.ko : notice.en
-  if (!text) return null
+  const text = (locale === 'ko' && notice.ko ? notice.ko : notice.en) || ''
+  if (!text.trim()) return null
 
   return (
     <div className="bg-burnt-orange text-white text-center text-sm py-1.5 px-10 relative">

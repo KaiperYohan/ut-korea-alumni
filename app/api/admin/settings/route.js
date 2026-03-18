@@ -25,11 +25,16 @@ export async function PUT(request) {
   const { settings } = await request.json()
 
   for (const [key, value] of Object.entries(settings)) {
-    await sql`
-      INSERT INTO site_settings (key, value)
-      VALUES (${key}, ${value})
-      ON CONFLICT (key) DO UPDATE SET value = ${value}, updated_at = NOW()
-    `
+    const trimmed = (value || '').trim()
+    if (trimmed) {
+      await sql`
+        INSERT INTO site_settings (key, value)
+        VALUES (${key}, ${trimmed})
+        ON CONFLICT (key) DO UPDATE SET value = ${trimmed}, updated_at = NOW()
+      `
+    } else {
+      await sql`DELETE FROM site_settings WHERE key = ${key}`
+    }
   }
 
   return Response.json({ success: true })
