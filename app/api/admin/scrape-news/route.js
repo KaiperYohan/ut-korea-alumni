@@ -32,13 +32,33 @@ function stripHtml(html) {
     .trim()
 }
 
-async function fetchRss(url) {
+async function fetchRssPage(url) {
   const res = await fetch(url, { next: { revalidate: 0 } })
   const xml = await res.text()
   const parsed = await parseStringPromise(xml, { explicitArray: false })
   const items = parsed.rss.channel.item
   if (!items) return []
   return Array.isArray(items) ? items : [items]
+}
+
+async function fetchAllRss(baseUrl) {
+  let allItems = []
+  let page = 1
+  while (true) {
+    const url = page === 1 ? baseUrl : `${baseUrl}?page=${page}`
+    try {
+      const items = await fetchRssPage(url)
+      if (items.length === 0) break
+      allItems = allItems.concat(items)
+      page++
+      // Safety limit to avoid infinite loops
+      if (page > 50) break
+    } catch {
+      // No more pages or invalid response
+      break
+    }
+  }
+  return allItems
 }
 
 // Try to match EN and KO articles by publication date and position in the issue
@@ -151,8 +171,8 @@ export async function POST() {
   try {
     // Fetch both RSS feeds
     const [enItems, koItems] = await Promise.all([
-      fetchRss(EN_RSS),
-      fetchRss(KO_RSS),
+      fetchAllRss(EN_RSS),
+      fetchAllRss(KO_RSS),
     ])
 
     // Get existing external URLs to avoid duplicates
