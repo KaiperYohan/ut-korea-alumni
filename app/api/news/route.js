@@ -80,7 +80,7 @@ export async function POST(request) {
       return Response.json({ error: 'Subcategory is required for Members News' }, { status: 400 })
     }
 
-    const validSubcategories = ['marriage', 'birth', 'death', 'promotion', 'job_change', 'seeking_employment', 'hiring', 'other']
+    const validSubcategories = ['marriage', 'birth', 'death', 'promotion', 'job_change', 'seeking_employment', 'hiring', 'interview', 'other']
     if (category === 'members_news' && !validSubcategories.includes(subcategory)) {
       return Response.json({ error: 'Invalid subcategory' }, { status: 400 })
     }
