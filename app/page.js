@@ -185,9 +185,9 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {latestNews.map(article => {
               const dateStr = new Date(article.created_at).toLocaleDateString(locale === 'ko' ? 'ko-KR' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'Asia/Seoul' })
-              const title = locale === 'ko' && article.title_ko ? article.title_ko : article.title
-              const subtitle = locale === 'ko' && article.title_ko ? article.title : article.title_ko
-              const content = locale === 'ko' && article.content_ko ? article.content_ko : article.content
+              const title = locale === 'ko' ? (article.title_ko || article.title) : (article.title || article.title_ko)
+              const subtitle = locale === 'ko' ? (article.title_ko && article.title) : (article.title && article.title_ko)
+              const content = locale === 'ko' ? (article.content_ko || article.content) : (article.content || article.content_ko)
               return (
                 <Link key={article.id} href={`/news/${article.id}`} className="card overflow-hidden group cursor-pointer no-underline">
                   <div className="h-44 bg-gradient-to-br from-cream to-cream-light relative overflow-hidden">

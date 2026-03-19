@@ -111,12 +111,12 @@ export default function NewsDetailPage({ params }) {
 
           {/* Title */}
           <h1 className="font-display text-3xl md:text-4xl font-bold text-charcoal leading-tight mb-2">
-            {locale === 'ko' && article.title_ko ? article.title_ko : article.title}
+            {locale === 'ko' ? (article.title_ko || article.title) : (article.title || article.title_ko)}
           </h1>
-          {locale === 'ko' && article.title_ko && (
+          {locale === 'ko' && article.title_ko && article.title && (
             <p className="text-lg text-charcoal-light mb-6">{article.title}</p>
           )}
-          {locale === 'en' && article.title_ko && (
+          {locale === 'en' && article.title && article.title_ko && (
             <p className="text-lg text-charcoal-light mb-6">{article.title_ko}</p>
           )}
 
@@ -124,13 +124,13 @@ export default function NewsDetailPage({ params }) {
 
           {/* Content */}
           <div className="text-charcoal leading-relaxed whitespace-pre-wrap text-base">
-            {locale === 'ko' && article.content_ko ? article.content_ko : article.content}
+            {locale === 'ko' ? (article.content_ko || article.content) : (article.content || article.content_ko)}
           </div>
 
           {/* External link for news articles */}
           {(article.external_url || article.external_url_ko) && (
             <a
-              href={locale === 'ko' && article.external_url_ko ? article.external_url_ko : article.external_url}
+              href={locale === 'ko' ? (article.external_url_ko || article.external_url) : (article.external_url || article.external_url_ko)}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 mt-6 text-burnt-orange font-medium text-sm hover:underline"

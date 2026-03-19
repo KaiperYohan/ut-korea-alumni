@@ -110,9 +110,9 @@ export default function NewsPage() {
         ) : (
           <div className="space-y-6">
             {articles.map(article => {
-              const externalUrl = locale === 'ko' && article.external_url_ko
-                ? article.external_url_ko
-                : article.external_url
+              const externalUrl = locale === 'ko'
+                ? (article.external_url_ko || article.external_url)
+                : (article.external_url || article.external_url_ko)
               const hasExternal = !!externalUrl
               const CardTag = hasExternal ? 'a' : Link
               const cardProps = hasExternal
@@ -151,13 +151,13 @@ export default function NewsPage() {
                       )}
                     </div>
                     <h2 className="font-display text-xl font-semibold text-charcoal group-hover:text-burnt-orange transition-colors leading-snug">
-                      {locale === 'ko' && article.title_ko ? article.title_ko : article.title}
+                      {locale === 'ko' ? (article.title_ko || article.title) : (article.title || article.title_ko)}
                     </h2>
-                    {locale === 'ko' && article.title_ko && (
+                    {locale === 'ko' && article.title_ko && article.title && (
                       <p className="text-sm text-charcoal-light mt-0.5">{article.title}</p>
                     )}
                     <p className="text-sm text-charcoal-light mt-2 line-clamp-2 leading-relaxed">
-                      {(locale === 'ko' && article.content_ko ? article.content_ko : article.content)?.slice(0, 200)}...
+                      {(locale === 'ko' ? (article.content_ko || article.content) : (article.content || article.content_ko))?.slice(0, 200)}...
                     </p>
                     <span className="inline-flex items-center gap-1 text-burnt-orange text-sm font-medium mt-3">
                       {hasExternal ? t('news.readOriginal') : t('news.readMore')}

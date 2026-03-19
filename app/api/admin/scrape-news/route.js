@@ -96,6 +96,8 @@ const SECTION_MAP = {
   "ut interview": "ut 구성원 인터뷰",
   "lifestyle": "라이프스타일",
   "careers": "커리어",
+  "call for submittals": "제보 받습니다",
+  "job posting": "채용공고",
 }
 
 function matchArticles(enItems, koItems) {
@@ -244,12 +246,12 @@ export async function POST() {
         continue
       }
 
-      const title = en ? en.title : (ko ? ko.title : 'Untitled')
+      const title = en ? en.title : null
       const titleKo = ko ? ko.title : null
-      const content = en ? stripHtml(en.description || '') : (ko ? stripHtml(ko.description || '') : '')
+      const content = en ? stripHtml(en.description || '') : null
       const contentKo = ko ? stripHtml(ko.description || '') : null
-      const externalUrl = enUrl || koUrl
-      const externalUrlKo = ko ? koUrl : null
+      const externalUrl = enUrl
+      const externalUrlKo = koUrl
       const pubDate = en?.pubDate || ko?.pubDate || new Date().toISOString()
 
       // Categorize based on title section
