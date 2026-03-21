@@ -91,15 +91,11 @@ export default function DuesPage() {
           </div>
         </div>
 
-        <div className="text-center mt-8">
-          {session ? (
-            <p className="text-sm text-charcoal-light">
-              {locale === 'ko' ? '이미 회원으로 가입되어 있습니다.' : 'You are already a registered member.'}
-            </p>
-          ) : (
+        {!session && (
+          <div className="text-center mt-8">
             <Link href="/signup" className="btn-primary no-underline">{t('dues.joinBtn')}</Link>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )
