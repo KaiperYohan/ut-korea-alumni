@@ -21,7 +21,8 @@ export default function AdminPage() {
   const [settingsSaving, setSettingsSaving] = useState(false)
 
   // Event form state
-  const [eventForm, setEventForm] = useState({ title: '', titleKo: '', description: '', descriptionKo: '', eventDate: '', location: '', locationKo: '', maxAttendees: '', externalUrl: '', imageUrls: [], timeTba: false, locationTba: false })
+  const [eventForm, setEventForm] = useState({ title: '', titleKo: '', description: '', descriptionKo: '', eventDate: '', location: '', locationKo: '', maxAttendees: '', externalUrl: '', timeTba: false, locationTba: false })
+  const [eventImageUrls, setEventImageUrls] = useState([])
   const [editingEvent, setEditingEvent] = useState(null)
   const [uploadingEventImage, setUploadingEventImage] = useState(false)
 
@@ -137,14 +138,15 @@ export default function AdminPage() {
     e.preventDefault()
     const url = editingEvent ? `/api/events/${editingEvent}` : '/api/events'
     const method = editingEvent ? 'PUT' : 'POST'
-    const payload = { ...eventForm, imageUrl: JSON.stringify(eventForm.imageUrls), eventDate: eventForm.eventDate ? eventForm.eventDate + ':00+09:00' : '' }
+    const payload = { ...eventForm, imageUrl: JSON.stringify(eventImageUrls), eventDate: eventForm.eventDate ? eventForm.eventDate + ':00+09:00' : '' }
     const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
       alert(data.error || 'Failed to save event')
       return
     }
-    setEventForm({ title: '', titleKo: '', description: '', descriptionKo: '', eventDate: '', location: '', locationKo: '', maxAttendees: '', externalUrl: '', imageUrls: [], timeTba: false, locationTba: false })
+    setEventForm({ title: '', titleKo: '', description: '', descriptionKo: '', eventDate: '', location: '', locationKo: '', maxAttendees: '', externalUrl: '', timeTba: false, locationTba: false })
+    setEventImageUrls([])
     setEditingEvent(null)
     fetchAll()
   }
@@ -162,9 +164,9 @@ export default function AdminPage() {
       title: event.title, titleKo: event.title_ko || '', description: event.description || '', descriptionKo: event.description_ko || '',
       eventDate: toKSTLocal(event.event_date), location: event.location || '', locationKo: event.location_ko || '', maxAttendees: event.max_attendees || '',
       externalUrl: event.external_url || '',
-      imageUrls: (() => { try { const p = JSON.parse(event.image_url); return Array.isArray(p) ? p : event.image_url ? [event.image_url] : [] } catch { return event.image_url ? [event.image_url] : [] } })(),
       timeTba: event.time_tba || false, locationTba: event.location_tba || false,
     })
+    setEventImageUrls((() => { try { const p = JSON.parse(event.image_url); return Array.isArray(p) ? p : event.image_url ? [event.image_url] : [] } catch { return event.image_url ? [event.image_url] : [] } })())
   }
 
   const handleEventImageUpload = async (e) => {
@@ -178,12 +180,12 @@ export default function AdminPage() {
         const res = await fetch('/api/events/image', { method: 'POST', body: formData })
         const data = await res.json()
         if (res.ok) {
-          setEventForm(p => ({ ...p, imageUrls: [...p.imageUrls, data.url] }))
+          setEventImageUrls(prev => [...prev, data.url])
         }
       } catch {}
     }
     setUploadingEventImage(false)
-    e.target.value = ''
+    if (e.target) e.target.value = ''
   }
 
   const handleDeleteEvent = async (id) => {
@@ -598,22 +600,22 @@ export default function AdminPage() {
                 <input type="url" value={eventForm.externalUrl} onChange={e => setEventForm(p => ({ ...p, externalUrl: e.target.value }))} className={inputClass} placeholder="https://..." />
               </div>
               <div>
-                <label className="block text-xs font-medium text-charcoal mb-1">Event Images {eventForm.imageUrls.length > 0 && <span className="text-charcoal-light font-normal">({eventForm.imageUrls.length} uploaded — first image = thumbnail)</span>}</label>
+                <label className="block text-xs font-medium text-charcoal mb-1">Event Images {eventImageUrls.length > 0 && <span className="text-charcoal-light font-normal">({eventImageUrls.length} uploaded — first image = thumbnail)</span>}</label>
                 <div className="flex items-center gap-3">
                   <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple={true} onChange={handleEventImageUpload} disabled={uploadingEventImage} className="text-sm text-charcoal-light file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-burnt-orange/10 file:text-burnt-orange hover:file:bg-burnt-orange/20 file:cursor-pointer" />
                   {uploadingEventImage && <span className="text-xs text-charcoal-light">Uploading...</span>}
                 </div>
                 <p className="text-[0.65rem] text-charcoal-light mt-1">You can select multiple files at once, or upload more one at a time. Each upload adds to the list.</p>
-                {eventForm.imageUrls.length > 0 && (
+                {eventImageUrls.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {eventForm.imageUrls.map((url, idx) => (
+                    {eventImageUrls.map((url, idx) => (
                       <div key={url} className={`relative group ${idx === 0 ? 'ring-2 ring-burnt-orange rounded' : ''}`}>
                         <img src={url} alt={`Image ${idx + 1}`} className="w-20 h-14 object-cover rounded" />
                         {idx === 0 && <span className="absolute -top-2 -left-1 bg-burnt-orange text-white text-[0.55rem] font-bold px-1 rounded">Thumb</span>}
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center gap-1">
-                          {idx > 0 && <button type="button" onClick={() => setEventForm(p => { const imgs = [...p.imageUrls]; [imgs[idx-1], imgs[idx]] = [imgs[idx], imgs[idx-1]]; return { ...p, imageUrls: imgs } })} className="text-white text-xs bg-transparent border-none cursor-pointer">&larr;</button>}
-                          <button type="button" onClick={() => setEventForm(p => ({ ...p, imageUrls: p.imageUrls.filter((_, i) => i !== idx) }))} className="text-red-300 text-xs bg-transparent border-none cursor-pointer">&times;</button>
-                          {idx < eventForm.imageUrls.length - 1 && <button type="button" onClick={() => setEventForm(p => { const imgs = [...p.imageUrls]; [imgs[idx], imgs[idx+1]] = [imgs[idx+1], imgs[idx]]; return { ...p, imageUrls: imgs } })} className="text-white text-xs bg-transparent border-none cursor-pointer">&rarr;</button>}
+                          {idx > 0 && <button type="button" onClick={() => setEventImageUrls(prev => { const imgs = [...prev]; [imgs[idx-1], imgs[idx]] = [imgs[idx], imgs[idx-1]]; return imgs })} className="text-white text-xs bg-transparent border-none cursor-pointer">&larr;</button>}
+                          <button type="button" onClick={() => setEventImageUrls(prev => prev.filter((_, i) => i !== idx))} className="text-red-300 text-xs bg-transparent border-none cursor-pointer">&times;</button>
+                          {idx < eventImageUrls.length - 1 && <button type="button" onClick={() => setEventImageUrls(prev => { const imgs = [...prev]; [imgs[idx], imgs[idx+1]] = [imgs[idx+1], imgs[idx]]; return imgs })} className="text-white text-xs bg-transparent border-none cursor-pointer">&rarr;</button>}
                         </div>
                       </div>
                     ))}
@@ -623,7 +625,7 @@ export default function AdminPage() {
               <div className="flex gap-3">
                 <button type="submit" className="btn-primary text-sm">{editingEvent ? 'Update' : 'Create'} Event</button>
                 {editingEvent && (
-                  <button type="button" onClick={() => { setEditingEvent(null); setEventForm({ title: '', titleKo: '', description: '', descriptionKo: '', eventDate: '', location: '', locationKo: '', maxAttendees: '', externalUrl: '', imageUrls: [], timeTba: false, locationTba: false }) }} className="btn-secondary text-sm">Cancel</button>
+                  <button type="button" onClick={() => { setEditingEvent(null); setEventImageUrls([]); setEventForm({ title: '', titleKo: '', description: '', descriptionKo: '', eventDate: '', location: '', locationKo: '', maxAttendees: '', externalUrl: '', timeTba: false, locationTba: false }) }} className="btn-secondary text-sm">Cancel</button>
                 )}
               </div>
             </form>
