@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useT } from '../components/LanguageProvider'
+import { useT, useLanguage } from '../components/LanguageProvider'
 import { getProfileCompletion, getMissingFields } from '@/lib/profileCompletion'
 
 const INTEREST_OPTIONS = [
@@ -14,6 +14,7 @@ const INTEREST_OPTIONS = [
 
 export default function ProfilePage() {
   const t = useT()
+  const { locale } = useLanguage()
   const router = useRouter()
   const { data: session, status } = useSession()
   const [loading, setLoading] = useState(true)
@@ -24,6 +25,7 @@ export default function ProfilePage() {
   const [passwordMessage, setPasswordMessage] = useState('')
   const [passwordError, setPasswordError] = useState('')
 
+  const [showMajorGuide, setShowMajorGuide] = useState(false)
   const [profileImage, setProfileImage] = useState(null)
   const [uploadingImage, setUploadingImage] = useState(false)
   const fileInputRef = useRef(null)
@@ -334,8 +336,17 @@ export default function ProfilePage() {
                 <input type="number" value={form.graduationYear} onChange={update('graduationYear')} className={inputClass} min="1950" max="2030" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-charcoal mb-1.5">{t('auth.major')}</label>
-                <input type="text" value={form.major} onChange={update('major')} className={inputClass} />
+                <div className="flex items-center gap-2 mb-1.5">
+                  <label className="block text-sm font-medium text-charcoal">{t('auth.major')}</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowMajorGuide(true)}
+                    className="text-xs text-burnt-orange hover:underline cursor-pointer bg-transparent border-none p-0"
+                  >
+                    {locale === 'ko' ? '작성 가이드' : 'How to fill in'}
+                  </button>
+                </div>
+                <input type="text" value={form.major} onChange={update('major')} className={inputClass} placeholder={locale === 'ko' ? '예: B.S. Computer Science' : 'e.g. B.S. Computer Science'} />
               </div>
             </div>
 
@@ -472,6 +483,121 @@ export default function ProfilePage() {
           </div>
         </form>
       </div>
+
+      {/* Major Guide Modal */}
+      {showMajorGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={() => setShowMajorGuide(false)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 md:p-8" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-display text-lg font-semibold text-charcoal">
+                {locale === 'ko' ? '전공 작성 가이드' : 'Major Field Guide'}
+              </h3>
+              <button onClick={() => setShowMajorGuide(false)} className="text-charcoal-light hover:text-charcoal bg-transparent border-none cursor-pointer text-xl leading-none">&times;</button>
+            </div>
+
+            <div className="space-y-5 text-sm text-charcoal leading-relaxed">
+              {locale === 'ko' ? (
+                <>
+                  <p className="text-charcoal-light">학위 약어와 전공명을 함께 적어주세요. 복수전공이나 여러 학위가 있는 경우 쉼표로 구분합니다.</p>
+
+                  <div>
+                    <h4 className="font-semibold text-charcoal mb-2">학위 약어</h4>
+                    <ul className="space-y-1 text-charcoal-light list-none">
+                      <li><span className="font-medium text-charcoal">B.A.</span> — Bachelor of Arts (문학사)</li>
+                      <li><span className="font-medium text-charcoal">B.S.</span> — Bachelor of Science (이학사)</li>
+                      <li><span className="font-medium text-charcoal">B.B.A.</span> — Bachelor of Business Administration (경영학사)</li>
+                      <li><span className="font-medium text-charcoal">M.A.</span> — Master of Arts (문학석사)</li>
+                      <li><span className="font-medium text-charcoal">M.S.</span> — Master of Science (이학석사)</li>
+                      <li><span className="font-medium text-charcoal">M.B.A.</span> — Master of Business Administration (경영학석사)</li>
+                      <li><span className="font-medium text-charcoal">M.Eng.</span> — Master of Engineering (공학석사)</li>
+                      <li><span className="font-medium text-charcoal">Ph.D.</span> — Doctor of Philosophy (박사)</li>
+                      <li><span className="font-medium text-charcoal">J.D.</span> — Juris Doctor (법학박사)</li>
+                      <li><span className="font-medium text-charcoal">LL.M.</span> — Master of Laws (법학석사)</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-charcoal mb-2">교환학생 및 어학연수</h4>
+                    <ul className="space-y-1 text-charcoal-light list-none">
+                      <li><span className="font-medium text-charcoal">Exchange</span> — 교환학생 (1학기 이상)</li>
+                      <li><span className="font-medium text-charcoal">ESL / ELP</span> — 어학연수 (English as a Second Language / English Language Program)</li>
+                      <li><span className="font-medium text-charcoal">Visiting</span> — 방문연구원</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-charcoal mb-2">작성 예시</h4>
+                    <ul className="space-y-1.5 text-charcoal-light list-none">
+                      <li><code className="bg-cream px-1.5 py-0.5 rounded text-xs">B.S. Computer Science</code></li>
+                      <li><code className="bg-cream px-1.5 py-0.5 rounded text-xs">B.B.A. Finance, B.S. Mathematics</code></li>
+                      <li><code className="bg-cream px-1.5 py-0.5 rounded text-xs">M.S. Electrical and Computer Engineering</code></li>
+                      <li><code className="bg-cream px-1.5 py-0.5 rounded text-xs">Ph.D. Chemistry</code></li>
+                      <li><code className="bg-cream px-1.5 py-0.5 rounded text-xs">Exchange, Economics</code></li>
+                      <li><code className="bg-cream px-1.5 py-0.5 rounded text-xs">ESL</code></li>
+                    </ul>
+                  </div>
+
+                  <p className="text-xs text-charcoal-light border-t border-charcoal/10 pt-4">
+                    전공명은 UT Austin 공식 명칭을 사용해주세요. 전체 목록은{' '}
+                    <a href="https://catalog.utexas.edu/general-information/coursesatoz/" target="_blank" rel="noopener noreferrer" className="text-burnt-orange hover:underline">
+                      UT Austin Course Catalog
+                    </a>
+                    에서 확인할 수 있습니다.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-charcoal-light">Enter your degree abbreviation followed by major name. For multiple degrees or majors, separate with a comma.</p>
+
+                  <div>
+                    <h4 className="font-semibold text-charcoal mb-2">Degree Abbreviations</h4>
+                    <ul className="space-y-1 text-charcoal-light list-none">
+                      <li><span className="font-medium text-charcoal">B.A.</span> — Bachelor of Arts</li>
+                      <li><span className="font-medium text-charcoal">B.S.</span> — Bachelor of Science</li>
+                      <li><span className="font-medium text-charcoal">B.B.A.</span> — Bachelor of Business Administration</li>
+                      <li><span className="font-medium text-charcoal">M.A.</span> — Master of Arts</li>
+                      <li><span className="font-medium text-charcoal">M.S.</span> — Master of Science</li>
+                      <li><span className="font-medium text-charcoal">M.B.A.</span> — Master of Business Administration</li>
+                      <li><span className="font-medium text-charcoal">M.Eng.</span> — Master of Engineering</li>
+                      <li><span className="font-medium text-charcoal">Ph.D.</span> — Doctor of Philosophy</li>
+                      <li><span className="font-medium text-charcoal">J.D.</span> — Juris Doctor</li>
+                      <li><span className="font-medium text-charcoal">LL.M.</span> — Master of Laws</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-charcoal mb-2">Exchange & Language Programs</h4>
+                    <ul className="space-y-1 text-charcoal-light list-none">
+                      <li><span className="font-medium text-charcoal">Exchange</span> — Exchange student (1+ semester)</li>
+                      <li><span className="font-medium text-charcoal">ESL / ELP</span> — English as a Second Language / English Language Program</li>
+                      <li><span className="font-medium text-charcoal">Visiting</span> — Visiting researcher/scholar</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-charcoal mb-2">Examples</h4>
+                    <ul className="space-y-1.5 text-charcoal-light list-none">
+                      <li><code className="bg-cream px-1.5 py-0.5 rounded text-xs">B.S. Computer Science</code></li>
+                      <li><code className="bg-cream px-1.5 py-0.5 rounded text-xs">B.B.A. Finance, B.S. Mathematics</code></li>
+                      <li><code className="bg-cream px-1.5 py-0.5 rounded text-xs">M.S. Electrical and Computer Engineering</code></li>
+                      <li><code className="bg-cream px-1.5 py-0.5 rounded text-xs">Ph.D. Chemistry</code></li>
+                      <li><code className="bg-cream px-1.5 py-0.5 rounded text-xs">Exchange, Economics</code></li>
+                      <li><code className="bg-cream px-1.5 py-0.5 rounded text-xs">ESL</code></li>
+                    </ul>
+                  </div>
+
+                  <p className="text-xs text-charcoal-light border-t border-charcoal/10 pt-4">
+                    Please use official UT Austin major names. Full list available at{' '}
+                    <a href="https://catalog.utexas.edu/general-information/coursesatoz/" target="_blank" rel="noopener noreferrer" className="text-burnt-orange hover:underline">
+                      UT Austin Course Catalog
+                    </a>.
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
