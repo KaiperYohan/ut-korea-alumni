@@ -154,8 +154,13 @@ export default function AdminPage() {
   const toKSTLocal = (dateStr) => {
     if (!dateStr) return ''
     const d = new Date(dateStr)
-    const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000)
-    return kst.toISOString().slice(0, 16)
+    // Format as YYYY-MM-DDTHH:mm in KST for datetime-local input
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false,
+    }).formatToParts(d)
+    const get = (type) => parts.find(p => p.type === type)?.value || ''
+    return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`
   }
 
   const handleEditEvent = (event) => {
