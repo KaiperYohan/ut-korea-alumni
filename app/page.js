@@ -38,8 +38,11 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative min-h-[92vh] flex items-center justify-center overflow-hidden hero-texture">
         {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-charcoal via-charcoal-light to-charcoal" />
-        <div className="absolute inset-0 bg-gradient-to-t from-burnt-orange/20 via-transparent to-transparent" />
+        <div className="absolute inset-0">
+          <img src="/grand reunion.jpg" alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-charcoal/70" />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-transparent to-charcoal/40" />
 
         {/* Geometric accent shapes */}
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-burnt-orange/8 rounded-full blur-[120px] translate-x-1/3 -translate-y-1/3" />
