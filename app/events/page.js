@@ -101,27 +101,41 @@ export default function EventsPage() {
             )}
 
             {/* Past Events */}
-            {past.length > 0 && (
-              <>
-                <h2 className="font-display text-xl font-semibold text-charcoal mb-6">{t('events.pastEvents')}</h2>
-                <div className="space-y-3">
-                  {past.map(event => (
-                    <Link key={event.id} href={`/events/${event.id}`} className="card p-5 flex items-center gap-4 opacity-70 hover:opacity-100 transition-opacity no-underline">
-                      <div className="shrink-0 text-center w-12">
-                        <div className="text-[0.6rem] font-bold text-charcoal-light tracking-wider uppercase">{getMonth(event.event_date)}</div>
-                        <div className="font-display text-lg font-bold text-charcoal">{getDay(event.event_date)}</div>
+            {past.length > 0 && (() => {
+              const pastByYear = {}
+              past.forEach(event => {
+                const year = toKSTDate(event.event_date).getFullYear()
+                if (!pastByYear[year]) pastByYear[year] = []
+                pastByYear[year].push(event)
+              })
+              const years = Object.keys(pastByYear).sort((a, b) => b - a)
+              return (
+                <>
+                  <h2 className="font-display text-xl font-semibold text-charcoal mb-6">{t('events.pastEvents')}</h2>
+                  {years.map(year => (
+                    <div key={year} className="mb-10">
+                      <h3 className="font-display text-lg font-semibold text-charcoal-light mb-4">{year}</h3>
+                      <div className="space-y-3">
+                        {pastByYear[year].map(event => (
+                          <Link key={event.id} href={`/events/${event.id}`} className="card p-5 flex items-center gap-4 opacity-70 hover:opacity-100 transition-opacity no-underline">
+                            <div className="shrink-0 text-center w-12">
+                              <div className="text-[0.6rem] font-bold text-charcoal-light tracking-wider uppercase">{getMonth(event.event_date)}</div>
+                              <div className="font-display text-lg font-bold text-charcoal">{getDay(event.event_date)}</div>
+                            </div>
+                            <div>
+                              <h3 className="font-display text-base font-semibold text-charcoal">
+                                {locale === 'ko' && event.title_ko ? event.title_ko : event.title}
+                              </h3>
+                              <p className="text-xs text-charcoal-light mt-0.5">{event.attendee_count || 0} {t('events.attendees')}</p>
+                            </div>
+                          </Link>
+                        ))}
                       </div>
-                      <div>
-                        <h3 className="font-display text-base font-semibold text-charcoal">
-                          {locale === 'ko' && event.title_ko ? event.title_ko : event.title}
-                        </h3>
-                        <p className="text-xs text-charcoal-light mt-0.5">{event.attendee_count || 0} {t('events.attendees')}</p>
-                      </div>
-                    </Link>
+                    </div>
                   ))}
-                </div>
-              </>
-            )}
+                </>
+              )
+            })()}
           </>
         )}
       </div>
