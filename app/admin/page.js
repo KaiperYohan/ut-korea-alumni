@@ -138,7 +138,9 @@ export default function AdminPage() {
     e.preventDefault()
     const url = editingEvent ? `/api/events/${editingEvent}` : '/api/events'
     const method = editingEvent ? 'PUT' : 'POST'
-    const payload = { ...eventForm, imageUrl: JSON.stringify(eventImageUrls), eventDate: eventForm.eventDate ? eventForm.eventDate + ':00+09:00' : '' }
+    // Ensure eventDate is always YYYY-MM-DDTHH:mm:00+09:00 (KST)
+    const rawDate = (eventForm.eventDate || '').slice(0, 16) // strip any trailing :ss or timezone
+    const payload = { ...eventForm, imageUrl: JSON.stringify(eventImageUrls), eventDate: rawDate ? rawDate + ':00+09:00' : '' }
     const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
@@ -154,13 +156,16 @@ export default function AdminPage() {
   const toKSTLocal = (dateStr) => {
     if (!dateStr) return ''
     const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return ''
     // Format as YYYY-MM-DDTHH:mm in KST for datetime-local input
-    const parts = new Intl.DateTimeFormat('en-CA', {
+    const parts = new Intl.DateTimeFormat('en-US', {
       timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit', hour12: false,
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
     }).formatToParts(d)
-    const get = (type) => parts.find(p => p.type === type)?.value || ''
-    return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`
+    const get = (type) => parts.find(p => p.type === type)?.value || '00'
+    const h = get('hour').padStart(2, '0')
+    const m = get('minute').padStart(2, '0')
+    return `${get('year')}-${get('month')}-${get('day')}T${h}:${m}`
   }
 
   const handleEditEvent = (event) => {
