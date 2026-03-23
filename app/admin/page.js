@@ -173,6 +173,7 @@ export default function AdminPage() {
       attendeeOverride: event.attendee_override || '',
     })
     setEventImageUrls((() => { try { const p = JSON.parse(event.image_url); return Array.isArray(p) ? p : event.image_url ? [event.image_url] : [] } catch { return event.image_url ? [event.image_url] : [] } })())
+    setTimeout(() => document.getElementById('event-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
   }
 
   const handleEventImageUpload = async (e) => {
@@ -216,6 +217,7 @@ export default function AdminPage() {
       title: article.title, titleKo: article.title_ko || '', content: article.content, contentKo: article.content_ko || '',
       published: article.published, category: article.category || 'utaka_news', externalUrl: article.external_url || '',
     })
+    setTimeout(() => document.getElementById('news-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
   }
 
   const handleSubmissionAction = async (id, action) => {
@@ -541,7 +543,7 @@ export default function AdminPage() {
         {activeTab === 'events' && (
           <div>
             {/* Event form */}
-            <form onSubmit={handleEventSubmit} className="card p-6 mb-8 space-y-4">
+            <form id="event-form" onSubmit={handleEventSubmit} className="card p-6 mb-8 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-display text-lg font-semibold text-charcoal">{editingEvent ? 'Edit Event' : 'Create Event'}</h3>
                 <div className="flex gap-2">
@@ -695,7 +697,7 @@ export default function AdminPage() {
             )}
 
             {/* News form */}
-            <form onSubmit={handleNewsSubmit} className="card p-6 mb-8 space-y-4">
+            <form id="news-form" onSubmit={handleNewsSubmit} className="card p-6 mb-8 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-display text-lg font-semibold text-charcoal">{editingNews ? 'Edit Article' : 'Create News Article'}</h3>
                 <div className="flex gap-2">
