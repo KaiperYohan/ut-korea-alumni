@@ -29,7 +29,7 @@ const COMMITTEES = [
       { role: 'vice_chair', en: 'Vice Chair', ko: '부위원장' },
       { role: 'member', en: 'Committee Member', ko: '위원' },
     ]},
-  { key: 'social', en: 'Social Affairs Committee', ko: '사회활동위원회',
+  { key: 'social', en: 'Social Affairs Committee', ko: '소셜위원회',
     descEn: 'Oversees all social activities and community events.',
     descKo: '모든 사교 활동과 커뮤니티 행사를 총괄합니다.',
     roles: [
