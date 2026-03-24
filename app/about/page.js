@@ -168,7 +168,7 @@ export default function AboutPage() {
 
           {/* Organization Chart */}
           {positions.length > 0 && (
-            <div className="mt-10 pt-8 border-t border-charcoal/10">
+            <div id="org-chart" className="mt-10 pt-8 border-t border-charcoal/10 scroll-mt-24">
               <h3 className="font-display text-xl font-semibold text-charcoal mb-6">
                 {locale === 'ko' ? '조직도' : 'Organization Chart'}
               </h3>

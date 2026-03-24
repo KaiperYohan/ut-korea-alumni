@@ -47,7 +47,7 @@ export default function Home() {
         {/* Background — rotating images */}
         <div className="absolute inset-0">
           {heroImages.map((src, i) => (
-            <img key={src} src={src} alt="" className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms] ease-in-out ${i === heroIdx ? 'opacity-100 z-[1]' : 'opacity-0 z-0'}`} style={{ willChange: 'opacity', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }} />
+            <img key={src} src={src} alt="" className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000" style={{ opacity: i === heroIdx ? 1 : 0 }} />
           ))}
           <div className="absolute inset-0 bg-charcoal/70" />
         </div>

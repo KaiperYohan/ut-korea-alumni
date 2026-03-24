@@ -115,7 +115,7 @@ export default function Navbar() {
       isActive: isActive('/about'),
       children: [
         { href: '/about#greetings', label: t('nav.greetings') },
-        { href: '/about#organization', label: t('nav.organization') },
+        { href: '/about#org-chart', label: t('nav.organization') },
         { href: '/about#past-presidents', label: t('nav.pastPresidents') },
         { href: '/about#contact', label: t('nav.contact') },
       ],
