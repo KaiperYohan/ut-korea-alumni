@@ -14,11 +14,16 @@ export default function Home() {
   const [latestNews, setLatestNews] = useState([])
   const heroImages = ['/grand reunion.jpg', '/home2.jpg', '/home3.jpeg', '/home4.jpg', '/home 5.jpg']
   const [heroIdx, setHeroIdx] = useState(0)
+  const [prevIdx, setPrevIdx] = useState(0)
 
   useEffect(() => {
-    // Preload all hero images so transitions are seamless
     heroImages.forEach(src => { const img = new Image(); img.src = src })
-    const timer = setInterval(() => setHeroIdx(i => (i + 1) % heroImages.length), 6000)
+    const timer = setInterval(() => {
+      setHeroIdx(prev => {
+        setPrevIdx(prev)
+        return (prev + 1) % heroImages.length
+      })
+    }, 6000)
     return () => clearInterval(timer)
   }, [])
 
@@ -48,18 +53,19 @@ export default function Home() {
       <section className="relative min-h-[92vh] flex items-center justify-center overflow-hidden hero-texture">
         {/* Background — rotating images */}
         <div className="absolute inset-0">
-          {heroImages.map((src, i) => (
-            <img key={src} src={src} alt="" className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000" style={{ opacity: i === heroIdx ? 1 : 0 }} />
-          ))}
+          {/* Previous image (behind) */}
+          <img src={heroImages[prevIdx]} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          {/* Current image (fades in on top) */}
+          <img key={heroIdx} src={heroImages[heroIdx]} alt="" className="absolute inset-0 w-full h-full object-cover animate-fade-in" />
           <div className="absolute inset-0 bg-charcoal/70" />
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-transparent to-charcoal/40" />
 
         {/* Hero arrows */}
-        <button onClick={() => { setHeroIdx(i => (i - 1 + heroImages.length) % heroImages.length) }} className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/50 transition-all cursor-pointer" aria-label="Previous image">
+        <button onClick={() => { setPrevIdx(heroIdx); setHeroIdx(i => (i - 1 + heroImages.length) % heroImages.length) }} className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/50 transition-all cursor-pointer" aria-label="Previous image">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
         </button>
-        <button onClick={() => { setHeroIdx(i => (i + 1) % heroImages.length) }} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/50 transition-all cursor-pointer" aria-label="Next image">
+        <button onClick={() => { setPrevIdx(heroIdx); setHeroIdx(i => (i + 1) % heroImages.length) }} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/50 transition-all cursor-pointer" aria-label="Next image">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
         </button>
 
