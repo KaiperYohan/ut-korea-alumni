@@ -214,11 +214,12 @@ export default function Home() {
               const title = locale === 'ko' ? (article.title_ko || article.title) : (article.title || article.title_ko)
               const subtitle = locale === 'ko' ? (article.title_ko && article.title) : (article.title && article.title_ko)
               const content = locale === 'ko' ? (article.content_ko || article.content) : (article.content || article.content_ko)
+              const CardTag = article.external_url ? 'a' : Link
               const linkProps = article.external_url
                 ? { href: article.external_url, target: '_blank', rel: 'noopener noreferrer' }
                 : { href: `/news/${article.id}` }
               return (
-                <Link key={article.id} {...linkProps} className="card overflow-hidden group cursor-pointer no-underline">
+                <CardTag key={article.id} {...linkProps} className="card overflow-hidden group cursor-pointer no-underline">
                   <div className="h-44 bg-gradient-to-br from-cream to-cream-light relative overflow-hidden">
                     {article.image_url ? (
                       <img src={article.image_url} alt={title} className="absolute inset-0 w-full h-full object-cover" />
@@ -234,7 +235,7 @@ export default function Home() {
                     {subtitle && <p className="text-sm text-charcoal-light mt-0.5 mb-2">{subtitle}</p>}
                     {content && <p className="text-sm text-charcoal-light/80 leading-relaxed line-clamp-2">{content}</p>}
                   </div>
-                </Link>
+                </CardTag>
               )
             })}
           </div>
