@@ -16,6 +16,8 @@ export default function Home() {
   const [heroIdx, setHeroIdx] = useState(0)
 
   useEffect(() => {
+    // Preload all hero images so transitions are seamless
+    heroImages.forEach(src => { const img = new Image(); img.src = src })
     const timer = setInterval(() => setHeroIdx(i => (i + 1) % heroImages.length), 6000)
     return () => clearInterval(timer)
   }, [])
