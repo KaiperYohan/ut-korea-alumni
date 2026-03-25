@@ -150,8 +150,28 @@ export async function GET(request) {
     await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS location_tba BOOLEAN DEFAULT false`
     await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS attendee_override INTEGER`
     // Convert event_date/end_date to TEXT so the exact entered value is preserved (no timezone shifting)
-    await sql`ALTER TABLE events ALTER COLUMN event_date TYPE TEXT USING to_char(event_date AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD"T"HH24:MI')`
-    await sql`ALTER TABLE events ALTER COLUMN end_date TYPE TEXT USING to_char(end_date AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD"T"HH24:MI')`
+    // Only convert if columns are still timestamp type (idempotent)
+    await sql`
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'events' AND column_name = 'event_date'
+            AND data_type != 'text'
+        ) THEN
+          ALTER TABLE events ALTER COLUMN event_date TYPE TEXT
+            USING to_char(event_date AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD"T"HH24:MI');
+        END IF;
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'events' AND column_name = 'end_date'
+            AND data_type != 'text'
+        ) THEN
+          ALTER TABLE events ALTER COLUMN end_date TYPE TEXT
+            USING to_char(end_date AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD"T"HH24:MI');
+        END IF;
+      END $$
+    `
 
     // Add columns to news (idempotent)
     await sql`ALTER TABLE news ADD COLUMN IF NOT EXISTS category VARCHAR(20) DEFAULT 'news'`
