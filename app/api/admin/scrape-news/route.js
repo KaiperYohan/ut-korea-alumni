@@ -246,9 +246,9 @@ export async function POST() {
         continue
       }
 
-      const title = en ? en.title : null
+      const title = en ? en.title : (ko ? ko.title : '')
       const titleKo = ko ? ko.title : null
-      const content = en ? stripHtml(en.description || '') : null
+      const content = en ? stripHtml(en.description || '') : (ko ? stripHtml(ko.description || '') : '')
       const contentKo = ko ? stripHtml(ko.description || '') : null
       const externalUrl = enUrl
       const externalUrlKo = koUrl
