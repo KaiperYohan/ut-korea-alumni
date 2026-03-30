@@ -32,8 +32,8 @@ export async function POST(request) {
 
     const now = new Date().toISOString()
     const { rows } = await sql`
-      INSERT INTO members (email, password_hash, name, name_ko, graduation_year, major, location, company, title, bio, birthday, phone, email_verified, verification_token, verification_token_expires, privacy_consent, privacy_consent_date, marketing_consent, marketing_consent_date)
-      VALUES (${email}, ${passwordHash}, ${name}, ${nameKo || null}, ${graduationYear ? parseInt(graduationYear) : null}, ${major || null}, ${location || null}, ${company || null}, ${title || null}, ${bio || null}, ${birthday || null}, ${phone}, false, ${verificationToken}, ${tokenExpires.toISOString()}, ${true}, ${now}, ${!!marketingConsent}, ${marketingConsent ? now : null})
+      INSERT INTO members (email, password_hash, name, name_ko, graduation_year, major, location, company, title, bio, birthday, phone, is_approved, email_verified, verification_token, verification_token_expires, privacy_consent, privacy_consent_date, marketing_consent, marketing_consent_date)
+      VALUES (${email}, ${passwordHash}, ${name}, ${nameKo || null}, ${graduationYear ? parseInt(graduationYear) : null}, ${major || null}, ${location || null}, ${company || null}, ${title || null}, ${bio || null}, ${birthday || null}, ${phone}, true, false, ${verificationToken}, ${tokenExpires.toISOString()}, ${true}, ${now}, ${!!marketingConsent}, ${marketingConsent ? now : null})
       RETURNING id, email, name
     `
 
