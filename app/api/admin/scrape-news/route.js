@@ -111,13 +111,18 @@ const SECTION_PAIRS = [
 ]
 
 function sectionsMatch(sectionA, sectionB) {
-  if (!sectionA || !sectionB) return false
-  if (sectionA === sectionB) return true
+  if (!sectionA || !sectionB) return 0  // unknown — neutral
+  if (sectionA === sectionB) return 1   // exact match
   for (const [enNames, koNames] of SECTION_PAIRS) {
     const allNames = [...enNames, ...koNames]
-    if (allNames.includes(sectionA) && allNames.includes(sectionB)) return true
+    if (allNames.includes(sectionA) && allNames.includes(sectionB)) return 1  // known pair
   }
-  return false
+  // Check if both sections are known but in DIFFERENT pairs → mismatch
+  const allKnown = SECTION_PAIRS.flatMap(([en, ko]) => [...en, ...ko])
+  const aKnown = allKnown.includes(sectionA)
+  const bKnown = allKnown.includes(sectionB)
+  if (aKnown && bKnown) return -1  // both known, different sections — block
+  return 0  // one or both unknown — neutral
 }
 
 function matchArticles(enItems, koItems) {
@@ -147,10 +152,10 @@ function matchArticles(enItems, koItems) {
         score += 10
       }
 
-      // Section matching
-      if (sectionsMatch(enInfo.section, koInfo.section)) {
-        score += 5
-      }
+      // Section matching: 1 = match, 0 = unknown, -1 = known mismatch
+      const sectionResult = sectionsMatch(enInfo.section, koInfo.section)
+      if (sectionResult === -1) continue  // known different sections — skip
+      if (sectionResult === 1) score += 5
 
       // Date proximity
       if (en.pubDate && ko.pubDate) {
