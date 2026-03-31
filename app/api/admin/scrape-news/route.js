@@ -116,8 +116,11 @@ function matchArticles(enItems, koItems) {
 
       let score = 0
 
+      // If both have volume numbers, they MUST match — skip if different
+      if (enInfo.vol && koInfo.vol && enInfo.vol !== koInfo.vol) continue
+
       // Same volume
-      if (enInfo.vol && koInfo.vol && enInfo.vol === koInfo.vol) score += 3
+      if (enInfo.vol && koInfo.vol && enInfo.vol === koInfo.vol) score += 10
 
       // Both are cover pages of same volume
       if (enInfo.isCover && koInfo.isCover && enInfo.vol === koInfo.vol) {
