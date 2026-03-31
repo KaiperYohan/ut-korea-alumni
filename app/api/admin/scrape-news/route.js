@@ -214,7 +214,8 @@ export async function POST() {
 
     // Get existing external URLs to avoid duplicates
     const { rows: existing } = await sql`
-      SELECT external_url, external_url_ko FROM news WHERE external_url IS NOT NULL
+      SELECT external_url, external_url_ko FROM news
+      WHERE external_url IS NOT NULL OR external_url_ko IS NOT NULL
     `
     const existingUrls = new Set()
     for (const r of existing) {
@@ -234,12 +235,15 @@ export async function POST() {
       const koUrl = ko?.url || null
 
       // Skip if already exists
-      if ((enUrl && existingUrls.has(enUrl)) || (koUrl && existingUrls.has(koUrl))) {
-        if (enUrl && koUrl && existingUrls.has(enUrl)) {
+      const enExists = enUrl && existingUrls.has(enUrl)
+      const koExists = koUrl && existingUrls.has(koUrl)
+      if (enExists || koExists) {
+        if (enUrl && koUrl && enExists && !koExists) {
           await sql`
             UPDATE news SET external_url_ko = ${koUrl}
             WHERE external_url = ${enUrl} AND (external_url_ko IS NULL OR external_url_ko = '')
           `
+          existingUrls.add(koUrl)
           updated++
         }
         skipped++
