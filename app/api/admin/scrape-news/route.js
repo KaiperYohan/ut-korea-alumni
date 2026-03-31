@@ -71,13 +71,24 @@ function isKoreanTitle(title) {
   return /[\uAC00-\uD7AF\u3130-\u318F]/.test(title)
 }
 
+// Normalize smart quotes, dashes, etc. for matching
+function normalizeText(str) {
+  return str
+    .replace(/[\u2018\u2019\u0060\u00B4]/g, "'")  // smart single quotes → straight
+    .replace(/[\u201C\u201D]/g, '"')  // smart double quotes → straight
+    .replace(/[\u2013\u2014]/g, '-')  // en/em dash → hyphen
+    .toLowerCase()
+    .trim()
+}
+
 // Extract volume and section from title for matching
 function extractSection(title) {
-  const volMatch = title.match(/vol\.\s*(\d+)/i) || title.match(/제(\d+)호/)
+  const normalized = normalizeText(title)
+  const volMatch = normalized.match(/vol\.\s*(\d+)/) || title.match(/제(\d+)호/)
   const vol = volMatch ? (volMatch[1] || volMatch[2]) : null
 
   const sectionMatch = title.match(/\[([^\]]+)\]/)
-  const section = sectionMatch ? sectionMatch[1].toLowerCase() : null
+  const section = sectionMatch ? normalizeText(sectionMatch[1]) : null
 
   // Check for cover/index pages (e.g. "SXSK Vol. 3 — March 15, 2026")
   const isCover = /^sxsk\s+(vol\.|제)/i.test(title)
@@ -85,19 +96,28 @@ function extractSection(title) {
   return { vol, section, isCover }
 }
 
-// Section mapping for EN/KO matching
-const SECTION_MAP = {
-  "publisher's letter": "발행인의 글",
-  "utaka news": "utaka 소식",
-  "alumni news": "동문 이야기",
-  "ut stories": "ut 소식",
-  "texas news": "texas 소식",
-  "ut member interview": "ut 구성원 인터뷰",
-  "ut interview": "ut 구성원 인터뷰",
-  "lifestyle": "라이프스타일",
-  "careers": "커리어",
-  "call for submittals": "제보 받습니다",
-  "job posting": "채용공고",
+// Section mapping for EN/KO matching (both directions)
+const SECTION_PAIRS = [
+  [["publisher's letter", "publisher's letter"], ["발행인의 글"]],
+  [["utaka news"], ["utaka 소식"]],
+  [["alumni news"], ["동문 이야기"]],
+  [["ut stories"], ["ut 소식"]],
+  [["texas news"], ["texas 소식"]],
+  [["ut member interview", "ut interview"], ["ut 구성원 인터뷰"]],
+  [["lifestyle"], ["라이프스타일"]],
+  [["careers", "career"], ["커리어"]],
+  [["call for submittals"], ["제보 받습니다"]],
+  [["job posting", "job postings"], ["채용공고"]],
+]
+
+function sectionsMatch(sectionA, sectionB) {
+  if (!sectionA || !sectionB) return false
+  if (sectionA === sectionB) return true
+  for (const [enNames, koNames] of SECTION_PAIRS) {
+    const allNames = [...enNames, ...koNames]
+    if (allNames.includes(sectionA) && allNames.includes(sectionB)) return true
+  }
+  return false
 }
 
 function matchArticles(enItems, koItems) {
@@ -128,11 +148,8 @@ function matchArticles(enItems, koItems) {
       }
 
       // Section matching
-      if (enInfo.section && koInfo.section) {
-        const mappedKo = SECTION_MAP[enInfo.section]
-        if (mappedKo === koInfo.section || enInfo.section === koInfo.section) {
-          score += 5
-        }
+      if (sectionsMatch(enInfo.section, koInfo.section)) {
+        score += 5
       }
 
       // Date proximity
