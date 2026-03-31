@@ -105,9 +105,8 @@ const SECTION_PAIRS = [
   [["texas news"], ["texas 소식"]],
   [["ut member interview", "ut interview"], ["ut 구성원 인터뷰"]],
   [["lifestyle"], ["라이프스타일"]],
-  [["careers", "career"], ["커리어"]],
+  [["careers", "career", "job posting", "job postings"], ["커리어", "채용공고"]],
   [["call for submittals"], ["제보 받습니다"]],
-  [["job posting", "job postings"], ["채용공고"]],
 ]
 
 function sectionsMatch(sectionA, sectionB) {
