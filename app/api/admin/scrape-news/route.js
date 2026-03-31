@@ -291,6 +291,8 @@ export async function POST() {
       } else if (/\[ut\s*member\s*interview\]|\[ut\s*구성원\s*인터뷰\]/.test(refTitle)) {
         category = 'members_news'
         subcategory = 'interview'
+      } else if (/\[careers?\]|\[job\s*postings?\]|\[채용공고\]|\[커리어\]/.test(refTitle)) {
+        category = 'pr'
       }
 
       await sql`
