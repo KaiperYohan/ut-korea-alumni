@@ -195,7 +195,9 @@ export async function DELETE() {
 
   try {
     const { rows } = await sql`
-      DELETE FROM news WHERE external_url IS NOT NULL AND external_url LIKE 'https://www.sxsk.news%'
+      DELETE FROM news
+      WHERE (external_url IS NOT NULL AND external_url LIKE 'https://www.sxsk.news%')
+         OR (external_url_ko IS NOT NULL AND external_url_ko LIKE 'https://www.sxsk.news%')
       RETURNING id
     `
     return Response.json({ success: true, deleted: rows.length })
