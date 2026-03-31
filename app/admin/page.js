@@ -255,7 +255,8 @@ export default function AdminPage() {
         const imgRes = await fetch('/api/news/backfill-images', { method: 'POST' })
         const imgData = await imgRes.json()
         const imgMsg = imgRes.ok ? ` Backfilled ${imgData.updated}/${imgData.total} images.` : ''
-        setScrapeResult(`Cleared ${delData.deleted} old articles. Re-imported ${data.imported} articles.${imgMsg}`)
+        const pairInfo = data.pairs ? `\n\nPairs:\n${data.pairs.map(p => `EN: ${p.en || '—'} | KO: ${p.ko || '—'}`).join('\n')}` : ''
+        setScrapeResult(`Cleared ${delData.deleted} old articles. Re-imported ${data.imported} articles.${imgMsg}${pairInfo}`)
         fetchAll()
       } else {
         setScrapeResult(`Cleared ${delData.deleted} but import failed: ${data.error}`)
@@ -714,7 +715,7 @@ export default function AdminPage() {
               </div>
             </div>
             {scrapeResult && (
-              <div className={`mb-6 px-4 py-2 rounded-lg text-sm ${scrapeResult.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+              <div className={`mb-6 px-4 py-2 rounded-lg text-sm whitespace-pre-wrap ${scrapeResult.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
                 {scrapeResult}
               </div>
             )}

@@ -298,6 +298,12 @@ export async function POST() {
       imported++
     }
 
+    // Debug: show how articles were paired
+    const pairDebug = pairs.map(({ en, ko }) => ({
+      en: en ? `${extractSection(en.title).vol || '?'}:${extractSection(en.title).section || en.title.slice(0, 40)}` : null,
+      ko: ko ? `${extractSection(ko.title).vol || '?'}:${extractSection(ko.title).section || ko.title.slice(0, 40)}` : null,
+    }))
+
     return Response.json({
       success: true,
       imported,
@@ -305,6 +311,7 @@ export async function POST() {
       skipped,
       total: pairs.length,
       fetched: { en: enItems.length, ko: koItems.length },
+      pairs: pairDebug,
     })
   } catch (error) {
     console.error('Scrape error:', error)
