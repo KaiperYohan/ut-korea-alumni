@@ -19,6 +19,8 @@ export default function AdminPage() {
   const [orgSaving, setOrgSaving] = useState(false)
   const [siteSettings, setSiteSettings] = useState({ stat_members: '150+', stat_events: '50+', stat_years: '15+', notice: '', notice_ko: '', greeting_president: '', greeting_president_ko: '' })
   const [settingsSaving, setSettingsSaving] = useState(false)
+  const [analytics, setAnalytics] = useState(null)
+  const [analyticsLoading, setAnalyticsLoading] = useState(false)
 
   // Event form state
   const [eventForm, setEventForm] = useState({ title: '', titleKo: '', description: '', descriptionKo: '', eventDate: '', location: '', locationKo: '', maxAttendees: '', externalUrl: '', timeTba: false, locationTba: false, attendeeOverride: '' })
@@ -340,6 +342,22 @@ export default function AdminPage() {
     setOrgSaving(false)
   }
 
+  const fetchAnalytics = async () => {
+    setAnalyticsLoading(true)
+    try {
+      const res = await fetch('/api/admin/analytics')
+      const data = await res.json()
+      setAnalytics(data)
+    } catch (e) {
+      console.error('Failed to fetch analytics', e)
+    }
+    setAnalyticsLoading(false)
+  }
+
+  useEffect(() => {
+    if (activeTab === 'analytics' && !analytics && !analyticsLoading) fetchAnalytics()
+  }, [activeTab])
+
   const handleSettingsSave = async () => {
     setSettingsSaving(true)
     await fetch('/api/admin/settings', {
@@ -371,6 +389,7 @@ export default function AdminPage() {
     { id: 'events', label: 'Events' },
     { id: 'news', label: 'News/SXSK' },
     { id: 'org', label: 'Organization' },
+    { id: 'analytics', label: 'Analytics' },
     { id: 'settings', label: 'Settings' },
   ]
 
@@ -918,6 +937,237 @@ export default function AdminPage() {
                 {settingsSaving ? 'Saving...' : 'Save Settings'}
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (
+          <div className="space-y-6">
+            {analyticsLoading || !analytics ? (
+              <div className="text-center py-12 text-charcoal-light">Loading analytics...</div>
+            ) : (
+              <>
+                {/* Member Activity */}
+                <div className="card p-6">
+                  <h2 className="font-display text-lg font-semibold text-charcoal mb-4">Member Activity</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-4 bg-green-50 rounded-xl">
+                      <div className="font-display text-2xl font-bold text-green-700">{analytics.recentLogins?.last_7d || 0}</div>
+                      <div className="text-xs text-charcoal-light mt-1">Active (7 days)</div>
+                    </div>
+                    <div className="text-center p-4 bg-blue-50 rounded-xl">
+                      <div className="font-display text-2xl font-bold text-blue-700">{analytics.recentLogins?.last_30d || 0}</div>
+                      <div className="text-xs text-charcoal-light mt-1">Active (30 days)</div>
+                    </div>
+                    <div className="text-center p-4 bg-amber-50 rounded-xl">
+                      <div className="font-display text-2xl font-bold text-amber-700">{analytics.recentLogins?.never_logged_in || 0}</div>
+                      <div className="text-xs text-charcoal-light mt-1">Never Logged In</div>
+                    </div>
+                    <div className="text-center p-4 bg-charcoal/5 rounded-xl">
+                      <div className="font-display text-2xl font-bold text-charcoal">{analytics.recentLogins?.total || 0}</div>
+                      <div className="text-xs text-charcoal-light mt-1">Total Members</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Signups Over Time */}
+                <div className="card p-6">
+                  <h2 className="font-display text-lg font-semibold text-charcoal mb-4">Signups (Last 12 Months)</h2>
+                  {analytics.membersByMonth?.length > 0 ? (
+                    <div className="flex items-end gap-1.5 h-40">
+                      {analytics.membersByMonth.map(m => {
+                        const max = Math.max(...analytics.membersByMonth.map(x => x.count), 1)
+                        const pct = (m.count / max) * 100
+                        return (
+                          <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
+                            <span className="text-xs font-medium text-charcoal">{m.count}</span>
+                            <div
+                              className="w-full bg-burnt-orange/80 rounded-t-md transition-all"
+                              style={{ height: `${Math.max(pct, 4)}%` }}
+                            />
+                            <span className="text-[10px] text-charcoal-light rotate-[-45deg] origin-top-left whitespace-nowrap mt-1">
+                              {m.month.slice(5)}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-charcoal-light">No signup data available.</p>
+                  )}
+                </div>
+
+                {/* Membership Breakdown */}
+                <div className="card p-6">
+                  <h2 className="font-display text-lg font-semibold text-charcoal mb-4">Membership Levels</h2>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-charcoal/10">
+                          <th className="text-left py-2 font-medium text-charcoal-light">Level</th>
+                          <th className="text-right py-2 font-medium text-charcoal-light">Total</th>
+                          <th className="text-right py-2 font-medium text-charcoal-light">Approved</th>
+                          <th className="text-right py-2 font-medium text-charcoal-light">Pending</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {analytics.membershipLevels?.map(l => (
+                          <tr key={l.level} className="border-b border-charcoal/5">
+                            <td className="py-2 capitalize font-medium">{l.level || 'general'}</td>
+                            <td className="py-2 text-right">{l.total}</td>
+                            <td className="py-2 text-right text-green-700">{l.approved}</td>
+                            <td className="py-2 text-right text-amber-600">{l.pending}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* By Location */}
+                  <div className="card p-6">
+                    <h2 className="font-display text-lg font-semibold text-charcoal mb-4">Top Locations</h2>
+                    <div className="space-y-2">
+                      {analytics.membersByLocation?.map(l => {
+                        const max = Math.max(...analytics.membersByLocation.map(x => x.count), 1)
+                        return (
+                          <div key={l.location} className="flex items-center gap-3">
+                            <span className="text-sm text-charcoal w-28 truncate shrink-0">{l.location}</span>
+                            <div className="flex-1 bg-charcoal/5 rounded-full h-5 overflow-hidden">
+                              <div
+                                className="h-full bg-burnt-orange/70 rounded-full"
+                                style={{ width: `${(l.count / max) * 100}%` }}
+                              />
+                            </div>
+                            <span className="text-sm font-medium text-charcoal w-8 text-right">{l.count}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* By Major */}
+                  <div className="card p-6">
+                    <h2 className="font-display text-lg font-semibold text-charcoal mb-4">Top Majors</h2>
+                    <div className="space-y-2">
+                      {analytics.membersByMajor?.map(m => {
+                        const max = Math.max(...analytics.membersByMajor.map(x => x.count), 1)
+                        return (
+                          <div key={m.major} className="flex items-center gap-3">
+                            <span className="text-sm text-charcoal w-28 truncate shrink-0">{m.major}</span>
+                            <div className="flex-1 bg-charcoal/5 rounded-full h-5 overflow-hidden">
+                              <div
+                                className="h-full bg-blue-500/70 rounded-full"
+                                style={{ width: `${(m.count / max) * 100}%` }}
+                              />
+                            </div>
+                            <span className="text-sm font-medium text-charcoal w-8 text-right">{m.count}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Graduation Year Distribution */}
+                <div className="card p-6">
+                  <h2 className="font-display text-lg font-semibold text-charcoal mb-4">Graduation Year Distribution</h2>
+                  {analytics.membersByYear?.length > 0 ? (
+                    <div className="flex items-end gap-1 h-32 overflow-x-auto">
+                      {analytics.membersByYear.map(y => {
+                        const max = Math.max(...analytics.membersByYear.map(x => x.count), 1)
+                        const pct = (y.count / max) * 100
+                        return (
+                          <div key={y.year} className="flex flex-col items-center gap-1 min-w-[28px]">
+                            <span className="text-[10px] font-medium text-charcoal">{y.count}</span>
+                            <div
+                              className="w-5 bg-gold/80 rounded-t-sm"
+                              style={{ height: `${Math.max(pct, 4)}%` }}
+                            />
+                            <span className="text-[9px] text-charcoal-light rotate-[-45deg] origin-top-left whitespace-nowrap mt-1">
+                              {String(y.year).slice(-2)}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-charcoal-light">No graduation year data.</p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Event Stats */}
+                  <div className="card p-6">
+                    <h2 className="font-display text-lg font-semibold text-charcoal mb-4">Event RSVPs</h2>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="text-center p-3 bg-burnt-orange/5 rounded-lg">
+                        <div className="font-display text-xl font-bold text-burnt-orange">{analytics.eventAttendance?.events_with_rsvps || 0}</div>
+                        <div className="text-[11px] text-charcoal-light mt-0.5">Events w/ RSVPs</div>
+                      </div>
+                      <div className="text-center p-3 bg-burnt-orange/5 rounded-lg">
+                        <div className="font-display text-xl font-bold text-burnt-orange">{analytics.eventAttendance?.attending || 0}</div>
+                        <div className="text-[11px] text-charcoal-light mt-0.5">Attending</div>
+                      </div>
+                      <div className="text-center p-3 bg-burnt-orange/5 rounded-lg">
+                        <div className="font-display text-xl font-bold text-burnt-orange">{analytics.eventAttendance?.total_rsvps || 0}</div>
+                        <div className="text-[11px] text-charcoal-light mt-0.5">Total RSVPs</div>
+                      </div>
+                    </div>
+                    {analytics.topEvents?.length > 0 && (
+                      <div className="mt-4">
+                        <h3 className="text-xs font-medium text-charcoal-light mb-2 uppercase tracking-wide">Top Events by Attendance</h3>
+                        <div className="space-y-1.5">
+                          {analytics.topEvents.map(e => (
+                            <div key={e.id} className="flex justify-between items-center text-sm">
+                              <span className="text-charcoal truncate mr-2">{e.title}</span>
+                              <span className="font-medium text-burnt-orange shrink-0">{e.attendees}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* News Stats */}
+                  <div className="card p-6">
+                    <h2 className="font-display text-lg font-semibold text-charcoal mb-4">News Articles</h2>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-charcoal/10">
+                            <th className="text-left py-2 font-medium text-charcoal-light">Category</th>
+                            <th className="text-right py-2 font-medium text-charcoal-light">Total</th>
+                            <th className="text-right py-2 font-medium text-charcoal-light">Published</th>
+                            <th className="text-right py-2 font-medium text-charcoal-light">Pending</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {analytics.newsByCategory?.map(c => (
+                            <tr key={c.category} className="border-b border-charcoal/5">
+                              <td className="py-2 font-medium">{c.category?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown'}</td>
+                              <td className="py-2 text-right">{c.count}</td>
+                              <td className="py-2 text-right text-green-700">{c.published}</td>
+                              <td className="py-2 text-right text-amber-600">{c.pending}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <button
+                    onClick={fetchAnalytics}
+                    className="btn-secondary !py-2 !px-5 text-sm cursor-pointer"
+                  >
+                    Refresh Analytics
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
 
