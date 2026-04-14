@@ -21,6 +21,7 @@ export default function AdminPage() {
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [analytics, setAnalytics] = useState(null)
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
+  const [analyticsError, setAnalyticsError] = useState(null)
 
   // Event form state
   const [eventForm, setEventForm] = useState({ title: '', titleKo: '', description: '', descriptionKo: '', eventDate: '', location: '', locationKo: '', maxAttendees: '', externalUrl: '', timeTba: false, locationTba: false, attendeeOverride: '' })
@@ -344,17 +345,18 @@ export default function AdminPage() {
 
   const fetchAnalytics = async () => {
     setAnalyticsLoading(true)
+    setAnalyticsError(null)
     try {
       const res = await fetch('/api/admin/analytics')
       const data = await res.json()
       if (data.error) {
-        console.error('Analytics error:', data.error)
+        setAnalyticsError(data.error)
         setAnalytics(null)
       } else {
         setAnalytics(data)
       }
     } catch (e) {
-      console.error('Failed to fetch analytics', e)
+      setAnalyticsError(e.message)
       setAnalytics(null)
     }
     setAnalyticsLoading(false)
@@ -953,6 +955,7 @@ export default function AdminPage() {
             ) : !analytics ? (
               <div className="text-center py-12">
                 <p className="text-charcoal-light mb-3">Failed to load analytics.</p>
+                {analyticsError && <p className="text-red-500 text-xs mb-3 font-mono">{analyticsError}</p>}
                 <button onClick={fetchAnalytics} className="btn-secondary !py-2 !px-5 text-sm cursor-pointer">Retry</button>
               </div>
             ) : (
