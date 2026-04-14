@@ -114,10 +114,8 @@ export default function NewsPage() {
                 ? (article.external_url_ko || article.external_url)
                 : (article.external_url || article.external_url_ko)
               const hasExternal = !!externalUrl
-              const CardTag = hasExternal ? 'a' : Link
-              const cardProps = hasExternal
-                ? { href: externalUrl, target: '_blank', rel: 'noopener noreferrer' }
-                : { href: `/news/${article.id}` }
+              const CardTag = Link
+              const cardProps = { href: `/news/${article.id}` }
 
               return (
                 <CardTag key={article.id} {...cardProps} className="card overflow-hidden flex flex-col md:flex-row no-underline group">
