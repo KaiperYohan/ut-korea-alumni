@@ -987,18 +987,18 @@ export default function AdminPage() {
                 <div className="card p-6">
                   <h2 className="font-display text-lg font-semibold text-charcoal mb-4">Signups (Last 12 Months)</h2>
                   {analytics.membersByMonth?.length > 0 ? (
-                    <div className="flex items-end gap-1.5 h-40">
+                    <div className="flex items-end gap-1.5" style={{ height: '160px' }}>
                       {analytics.membersByMonth.map(m => {
-                        const max = Math.max(...analytics.membersByMonth.map(x => x.count), 1)
-                        const pct = (m.count / max) * 100
+                        const max = Math.max(...analytics.membersByMonth.map(x => Number(x.count)), 1)
+                        const barH = Math.max((Number(m.count) / max) * 120, 4)
                         return (
-                          <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
-                            <span className="text-xs font-medium text-charcoal">{m.count}</span>
+                          <div key={m.month} className="flex-1 flex flex-col items-center justify-end">
+                            <span className="text-xs font-medium text-charcoal mb-1">{m.count}</span>
                             <div
-                              className="w-full bg-burnt-orange/80 rounded-t-md transition-all"
-                              style={{ height: `${Math.max(pct, 4)}%` }}
+                              className="w-full bg-burnt-orange/80 rounded-t-md"
+                              style={{ height: `${barH}px` }}
                             />
-                            <span className="text-[10px] text-charcoal-light rotate-[-45deg] origin-top-left whitespace-nowrap mt-1">
+                            <span className="text-[10px] text-charcoal-light mt-1 whitespace-nowrap">
                               {m.month.slice(5)}
                             </span>
                           </div>
@@ -1043,14 +1043,14 @@ export default function AdminPage() {
                     <h2 className="font-display text-lg font-semibold text-charcoal mb-4">Top Locations</h2>
                     <div className="space-y-2">
                       {analytics.membersByLocation?.map(l => {
-                        const max = Math.max(...analytics.membersByLocation.map(x => x.count), 1)
+                        const max = Math.max(...analytics.membersByLocation.map(x => Number(x.count)), 1)
                         return (
                           <div key={l.location} className="flex items-center gap-3">
                             <span className="text-sm text-charcoal w-28 truncate shrink-0">{l.location}</span>
                             <div className="flex-1 bg-charcoal/5 rounded-full h-5 overflow-hidden">
                               <div
                                 className="h-full bg-burnt-orange/70 rounded-full"
-                                style={{ width: `${(l.count / max) * 100}%` }}
+                                style={{ width: `${(Number(l.count) / max) * 100}%` }}
                               />
                             </div>
                             <span className="text-sm font-medium text-charcoal w-8 text-right">{l.count}</span>
@@ -1065,14 +1065,14 @@ export default function AdminPage() {
                     <h2 className="font-display text-lg font-semibold text-charcoal mb-4">Top Majors</h2>
                     <div className="space-y-2">
                       {analytics.membersByMajor?.map(m => {
-                        const max = Math.max(...analytics.membersByMajor.map(x => x.count), 1)
+                        const max = Math.max(...analytics.membersByMajor.map(x => Number(x.count)), 1)
                         return (
                           <div key={m.major} className="flex items-center gap-3">
                             <span className="text-sm text-charcoal w-28 truncate shrink-0">{m.major}</span>
                             <div className="flex-1 bg-charcoal/5 rounded-full h-5 overflow-hidden">
                               <div
                                 className="h-full bg-blue-500/70 rounded-full"
-                                style={{ width: `${(m.count / max) * 100}%` }}
+                                style={{ width: `${(Number(m.count) / max) * 100}%` }}
                               />
                             </div>
                             <span className="text-sm font-medium text-charcoal w-8 text-right">{m.count}</span>
@@ -1087,18 +1087,18 @@ export default function AdminPage() {
                 <div className="card p-6">
                   <h2 className="font-display text-lg font-semibold text-charcoal mb-4">Graduation Year Distribution</h2>
                   {analytics.membersByYear?.length > 0 ? (
-                    <div className="flex items-end gap-1 h-32 overflow-x-auto">
+                    <div className="flex items-end gap-1 overflow-x-auto" style={{ height: '140px' }}>
                       {analytics.membersByYear.map(y => {
-                        const max = Math.max(...analytics.membersByYear.map(x => x.count), 1)
-                        const pct = (y.count / max) * 100
+                        const max = Math.max(...analytics.membersByYear.map(x => Number(x.count)), 1)
+                        const barH = Math.max((Number(y.count) / max) * 100, 4)
                         return (
-                          <div key={y.year} className="flex flex-col items-center gap-1 min-w-[28px]">
-                            <span className="text-[10px] font-medium text-charcoal">{y.count}</span>
+                          <div key={y.year} className="flex flex-col items-center justify-end min-w-[28px]">
+                            <span className="text-[10px] font-medium text-charcoal mb-1">{y.count}</span>
                             <div
                               className="w-5 bg-gold/80 rounded-t-sm"
-                              style={{ height: `${Math.max(pct, 4)}%` }}
+                              style={{ height: `${barH}px` }}
                             />
-                            <span className="text-[9px] text-charcoal-light rotate-[-45deg] origin-top-left whitespace-nowrap mt-1">
+                            <span className="text-[9px] text-charcoal-light mt-1 whitespace-nowrap">
                               {String(y.year).slice(-2)}
                             </span>
                           </div>
