@@ -347,16 +347,18 @@ export default function AdminPage() {
     try {
       const res = await fetch('/api/admin/analytics')
       const data = await res.json()
-      setAnalytics(data)
+      if (data.error) {
+        console.error('Analytics error:', data.error)
+        setAnalytics(null)
+      } else {
+        setAnalytics(data)
+      }
     } catch (e) {
       console.error('Failed to fetch analytics', e)
+      setAnalytics(null)
     }
     setAnalyticsLoading(false)
   }
-
-  useEffect(() => {
-    if (activeTab === 'analytics' && !analytics && !analyticsLoading) fetchAnalytics()
-  }, [activeTab])
 
   const handleSettingsSave = async () => {
     setSettingsSaving(true)
@@ -403,7 +405,10 @@ export default function AdminPage() {
           {tabs.map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id)
+                if (tab.id === 'analytics' && !analytics && !analyticsLoading) fetchAnalytics()
+              }}
               className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer bg-transparent border-t-0 border-x-0 ${
                 activeTab === tab.id
                   ? 'border-burnt-orange text-burnt-orange'
@@ -943,8 +948,13 @@ export default function AdminPage() {
         {/* Analytics Tab */}
         {activeTab === 'analytics' && (
           <div className="space-y-6">
-            {analyticsLoading || !analytics ? (
+            {analyticsLoading ? (
               <div className="text-center py-12 text-charcoal-light">Loading analytics...</div>
+            ) : !analytics ? (
+              <div className="text-center py-12">
+                <p className="text-charcoal-light mb-3">Failed to load analytics.</p>
+                <button onClick={fetchAnalytics} className="btn-secondary !py-2 !px-5 text-sm cursor-pointer">Retry</button>
+              </div>
             ) : (
               <>
                 {/* Member Activity */}
