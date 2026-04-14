@@ -19,12 +19,26 @@ export async function GET() {
   }
 
   try {
-    const membersByMonth = await safeQuery('membersByMonth', () => sql`
-      SELECT to_char(created_at, 'YYYY-MM') AS month, COUNT(*) AS count
+    const signupsByWeek = await safeQuery('signupsByWeek', () => sql`
+      SELECT to_char(date_trunc('week', created_at), 'YYYY-MM-DD') AS week, COUNT(*) AS count
       FROM members
-      WHERE created_at >= NOW() - INTERVAL '12 months'
-      GROUP BY to_char(created_at, 'YYYY-MM')
-      ORDER BY month
+      WHERE created_at >= NOW() - INTERVAL '12 weeks'
+      GROUP BY date_trunc('week', created_at)
+      ORDER BY week
+    `)
+
+    const profileCompleteness = await safeQuery('profileCompleteness', () => sql`
+      SELECT
+        COUNT(*) AS total,
+        SUM(CASE WHEN name_ko IS NOT NULL AND name_ko != '' THEN 1 ELSE 0 END) AS has_name_ko,
+        SUM(CASE WHEN graduation_year IS NOT NULL THEN 1 ELSE 0 END) AS has_grad_year,
+        SUM(CASE WHEN major IS NOT NULL AND major != '' THEN 1 ELSE 0 END) AS has_major,
+        SUM(CASE WHEN location IS NOT NULL AND location != '' THEN 1 ELSE 0 END) AS has_location,
+        SUM(CASE WHEN company IS NOT NULL AND company != '' THEN 1 ELSE 0 END) AS has_company,
+        SUM(CASE WHEN title IS NOT NULL AND title != '' THEN 1 ELSE 0 END) AS has_title,
+        SUM(CASE WHEN bio IS NOT NULL AND bio != '' THEN 1 ELSE 0 END) AS has_bio,
+        SUM(CASE WHEN profile_image_url IS NOT NULL AND profile_image_url != '' THEN 1 ELSE 0 END) AS has_photo
+      FROM members
     `)
 
     const membersByYear = await safeQuery('membersByYear', () => sql`
@@ -94,7 +108,8 @@ export async function GET() {
     `)
 
     return Response.json({
-      membersByMonth: membersByMonth.rows,
+      signupsByWeek: signupsByWeek.rows,
+      profileCompleteness: profileCompleteness.rows[0] || {},
       membersByYear: membersByYear.rows,
       membersByLocation: membersByLocation.rows,
       membersByMajor: membersByMajor.rows,

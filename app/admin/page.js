@@ -983,23 +983,76 @@ export default function AdminPage() {
                   </div>
                 </div>
 
+                {/* Profile Completeness */}
+                <div className="card p-6">
+                  <h2 className="font-display text-lg font-semibold text-charcoal mb-4">Profile Completeness</h2>
+                  {analytics.profileCompleteness?.total ? (() => {
+                    const pc = analytics.profileCompleteness
+                    const total = Number(pc.total) || 1
+                    const fields = [
+                      { label: 'Korean Name', count: Number(pc.has_name_ko) || 0 },
+                      { label: 'Grad Year', count: Number(pc.has_grad_year) || 0 },
+                      { label: 'Major', count: Number(pc.has_major) || 0 },
+                      { label: 'Location', count: Number(pc.has_location) || 0 },
+                      { label: 'Company', count: Number(pc.has_company) || 0 },
+                      { label: 'Job Title', count: Number(pc.has_title) || 0 },
+                      { label: 'Bio', count: Number(pc.has_bio) || 0 },
+                      { label: 'Photo', count: Number(pc.has_photo) || 0 },
+                    ]
+                    const avgPct = Math.round(fields.reduce((s, f) => s + (f.count / total) * 100, 0) / fields.length)
+                    return (
+                      <div>
+                        <div className="flex items-center gap-4 mb-5">
+                          <div className="relative w-20 h-20">
+                            <svg viewBox="0 0 36 36" className="w-20 h-20 -rotate-90">
+                              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e5e7eb" strokeWidth="3" />
+                              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#BF5700" strokeWidth="3"
+                                strokeDasharray={`${avgPct} ${100 - avgPct}`} strokeLinecap="round" />
+                            </svg>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="font-display text-lg font-bold text-burnt-orange">{avgPct}%</span>
+                            </div>
+                          </div>
+                          <div className="text-sm text-charcoal-light">Average profile completion across all {total} members</div>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          {fields.map(f => {
+                            const pct = Math.round((f.count / total) * 100)
+                            return (
+                              <div key={f.label} className="text-center">
+                                <div className="text-xs text-charcoal-light mb-1">{f.label}</div>
+                                <div className="w-full bg-charcoal/5 rounded-full h-2 overflow-hidden">
+                                  <div className="h-full bg-burnt-orange/70 rounded-full" style={{ width: `${pct}%` }} />
+                                </div>
+                                <div className="text-xs font-medium text-charcoal mt-1">{f.count}/{total} ({pct}%)</div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })() : <p className="text-sm text-charcoal-light">No data.</p>}
+                </div>
+
                 {/* Signups Over Time */}
                 <div className="card p-6">
-                  <h2 className="font-display text-lg font-semibold text-charcoal mb-4">Signups (Last 12 Months)</h2>
-                  {analytics.membersByMonth?.length > 0 ? (
+                  <h2 className="font-display text-lg font-semibold text-charcoal mb-4">Weekly Signups (Last 12 Weeks)</h2>
+                  {analytics.signupsByWeek?.length > 0 ? (
                     <div className="flex items-end gap-1.5" style={{ height: '160px' }}>
-                      {analytics.membersByMonth.map(m => {
-                        const max = Math.max(...analytics.membersByMonth.map(x => Number(x.count)), 1)
-                        const barH = Math.max((Number(m.count) / max) * 120, 4)
+                      {analytics.signupsByWeek.map(w => {
+                        const max = Math.max(...analytics.signupsByWeek.map(x => Number(x.count)), 1)
+                        const barH = Math.max((Number(w.count) / max) * 120, 4)
+                        const d = new Date(w.week)
+                        const label = `${d.getMonth() + 1}/${d.getDate()}`
                         return (
-                          <div key={m.month} className="flex-1 flex flex-col items-center justify-end">
-                            <span className="text-xs font-medium text-charcoal mb-1">{m.count}</span>
+                          <div key={w.week} className="flex-1 flex flex-col items-center justify-end">
+                            <span className="text-xs font-medium text-charcoal mb-1">{w.count}</span>
                             <div
                               className="w-full bg-burnt-orange/80 rounded-t-md"
                               style={{ height: `${barH}px` }}
                             />
                             <span className="text-[10px] text-charcoal-light mt-1 whitespace-nowrap">
-                              {m.month.slice(5)}
+                              {label}
                             </span>
                           </div>
                         )
