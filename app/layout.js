@@ -16,8 +16,8 @@ export const metadata = {
   keywords: ['UT Austin', 'University of Texas', 'Korea alumni', 'Longhorns', '텍사스 대학교', '한국 동문회', 'UT Austin Korea', 'alumni network', 'Hook em'],
   authors: [{ name: 'UT Austin Korea Alumni Association' }],
   icons: {
-    icon: '/favicon-tab.png',
-    apple: '/favicon-tab.png',
+    icon: '/favicon.png',
+    apple: '/favicon.png',
   },
   openGraph: {
     type: 'website',
