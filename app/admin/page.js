@@ -9,7 +9,7 @@ export default function AdminPage() {
   const t = useT()
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState('dashboard')
+  const [activeTab, setActiveTab] = useState('analytics')
   const [members, setMembers] = useState([])
   const [events, setEvents] = useState([])
   const [articles, setArticles] = useState([])
@@ -71,7 +71,10 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.isAdmin) fetchAll()
+    if (status === 'authenticated' && session?.user?.isAdmin) {
+      fetchAll()
+      fetchAnalytics()
+    }
   }, [status, session])
 
   const handleMemberAction = async (id, action, level) => {
@@ -387,13 +390,12 @@ export default function AdminPage() {
   const pendingSubmissions = submissions.length
 
   const tabs = [
-    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'analytics', label: 'Dashboard' },
     { id: 'members', label: `Members ${pendingCount > 0 ? `(${pendingCount})` : ''}` },
     { id: 'submissions', label: `Submissions ${pendingSubmissions > 0 ? `(${pendingSubmissions})` : ''}` },
     { id: 'events', label: 'Events' },
     { id: 'news', label: 'News/SXSK' },
     { id: 'org', label: 'Organization' },
-    { id: 'analytics', label: 'Analytics' },
     { id: 'settings', label: 'Settings' },
   ]
 
@@ -421,50 +423,6 @@ export default function AdminPage() {
             </button>
           ))}
         </div>
-
-        {/* Dashboard Tab */}
-        {activeTab === 'dashboard' && (
-          <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-            <div className="card p-6 text-center">
-              <div className="font-display text-3xl font-bold text-burnt-orange">{members.length}</div>
-              <div className="text-sm text-charcoal-light mt-1">Total Members</div>
-            </div>
-            <div className="card p-6 text-center">
-              <div className="font-display text-3xl font-bold text-amber-600">{pendingCount}</div>
-              <div className="text-sm text-charcoal-light mt-1">Pending Approval</div>
-            </div>
-            <div className="card p-6 text-center">
-              <div className="font-display text-3xl font-bold text-burnt-orange">{events.length}</div>
-              <div className="text-sm text-charcoal-light mt-1">Total Events</div>
-            </div>
-            <div className="card p-6 text-center">
-              <div className="font-display text-3xl font-bold text-burnt-orange">{articles.length}</div>
-              <div className="text-sm text-charcoal-light mt-1">News Articles</div>
-            </div>
-            {pendingSubmissions > 0 && (
-              <div className="card p-6 text-center border-amber-300 bg-amber-50/30">
-                <div className="font-display text-3xl font-bold text-amber-600">{pendingSubmissions}</div>
-                <div className="text-sm text-charcoal-light mt-1">Pending Submissions</div>
-              </div>
-            )}
-          </div>
-          <div className="grid grid-cols-3 gap-5 mt-5">
-            <div className="card p-5 text-center">
-              <div className="font-display text-2xl font-bold text-purple-700">{executiveCount}</div>
-              <div className="text-sm text-charcoal-light mt-1">Executive</div>
-            </div>
-            <div className="card p-5 text-center">
-              <div className="font-display text-2xl font-bold text-blue-700">{fullCount}</div>
-              <div className="text-sm text-charcoal-light mt-1">Full</div>
-            </div>
-            <div className="card p-5 text-center">
-              <div className="font-display text-2xl font-bold text-charcoal-light">{generalCount}</div>
-              <div className="text-sm text-charcoal-light mt-1">General</div>
-            </div>
-          </div>
-          </>
-        )}
 
         {/* Members Tab */}
         {activeTab === 'members' && (
@@ -947,9 +905,49 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Analytics Tab */}
+        {/* Dashboard Tab */}
         {activeTab === 'analytics' && (
           <div className="space-y-6">
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+              <div className="card p-6 text-center">
+                <div className="font-display text-3xl font-bold text-burnt-orange">{members.length}</div>
+                <div className="text-sm text-charcoal-light mt-1">Total Members</div>
+              </div>
+              <div className="card p-6 text-center">
+                <div className="font-display text-3xl font-bold text-amber-600">{pendingCount}</div>
+                <div className="text-sm text-charcoal-light mt-1">Pending Approval</div>
+              </div>
+              <div className="card p-6 text-center">
+                <div className="font-display text-3xl font-bold text-burnt-orange">{events.length}</div>
+                <div className="text-sm text-charcoal-light mt-1">Total Events</div>
+              </div>
+              <div className="card p-6 text-center">
+                <div className="font-display text-3xl font-bold text-burnt-orange">{articles.length}</div>
+                <div className="text-sm text-charcoal-light mt-1">News Articles</div>
+              </div>
+              {pendingSubmissions > 0 && (
+                <div className="card p-6 text-center border-amber-300 bg-amber-50/30">
+                  <div className="font-display text-3xl font-bold text-amber-600">{pendingSubmissions}</div>
+                  <div className="text-sm text-charcoal-light mt-1">Pending Submissions</div>
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-3 gap-5">
+              <div className="card p-5 text-center">
+                <div className="font-display text-2xl font-bold text-purple-700">{executiveCount}</div>
+                <div className="text-sm text-charcoal-light mt-1">Executive</div>
+              </div>
+              <div className="card p-5 text-center">
+                <div className="font-display text-2xl font-bold text-blue-700">{fullCount}</div>
+                <div className="text-sm text-charcoal-light mt-1">Full</div>
+              </div>
+              <div className="card p-5 text-center">
+                <div className="font-display text-2xl font-bold text-charcoal-light">{generalCount}</div>
+                <div className="text-sm text-charcoal-light mt-1">General</div>
+              </div>
+            </div>
+
             {analyticsLoading ? (
               <div className="text-center py-12 text-charcoal-light">Loading analytics...</div>
             ) : !analytics ? (
