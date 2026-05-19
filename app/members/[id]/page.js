@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useT, useLanguage } from '../../components/LanguageProvider'
+import { linkify } from '@/lib/linkify'
 
 export default function MemberDetailPage() {
   const t = useT()
@@ -204,7 +205,7 @@ export default function MemberDetailPage() {
           {member.bio && (
             <div className="mt-6 pt-6 border-t border-charcoal/10">
               <h3 className="text-sm font-semibold text-charcoal mb-2">{t('auth.bio')}</h3>
-              <p className="text-charcoal-light text-sm leading-relaxed whitespace-pre-line">{member.bio}</p>
+              <p className="text-charcoal-light text-sm leading-relaxed whitespace-pre-line">{linkify(member.bio)}</p>
             </div>
           )}
         </div>

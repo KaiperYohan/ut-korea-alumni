@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { useT, useLanguage } from '../../components/LanguageProvider'
+import { linkify } from '@/lib/linkify'
 
 export default function NewsDetailPage({ params }) {
   const { id } = use(params)
@@ -124,7 +125,7 @@ export default function NewsDetailPage({ params }) {
 
           {/* Content */}
           <div className="text-charcoal leading-relaxed whitespace-pre-wrap text-base">
-            {locale === 'ko' ? (article.content_ko || article.content) : (article.content || article.content_ko)}
+            {linkify(locale === 'ko' ? (article.content_ko || article.content) : (article.content || article.content_ko))}
           </div>
 
           {/* External link for news articles */}
@@ -224,7 +225,7 @@ export default function NewsDetailPage({ params }) {
                       </button>
                     )}
                   </div>
-                  <p className="text-sm text-charcoal leading-relaxed whitespace-pre-wrap">{comment.content}</p>
+                  <p className="text-sm text-charcoal leading-relaxed whitespace-pre-wrap">{linkify(comment.content)}</p>
                 </div>
               ))}
             </div>

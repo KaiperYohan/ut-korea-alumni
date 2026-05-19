@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { useT, useLanguage } from '../../components/LanguageProvider'
+import { linkify } from '@/lib/linkify'
 
 export default function EventDetailPage({ params }) {
   const { id } = use(params)
@@ -127,7 +128,7 @@ export default function EventDetailPage({ params }) {
             {(event.description || event.description_ko) && (
               <div className="prose prose-charcoal max-w-none mb-8">
                 <p className="text-charcoal leading-relaxed whitespace-pre-wrap">
-                  {locale === 'ko' && event.description_ko ? event.description_ko : event.description}
+                  {linkify(locale === 'ko' && event.description_ko ? event.description_ko : event.description)}
                 </p>
               </div>
             )}

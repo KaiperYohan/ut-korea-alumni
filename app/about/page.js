@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useT, useLanguage } from '../components/LanguageProvider'
+import { linkify } from '@/lib/linkify'
 
 const COMMITTEES = [
   { key: 'board', en: 'Board of Directors', ko: '이사회',
@@ -134,7 +135,7 @@ export default function AboutPage() {
                   </Link>
                 )}
                 <p className="text-charcoal leading-relaxed whitespace-pre-wrap">
-                  {locale === 'ko' ? (greeting.ko || greeting.en) : (greeting.en || greeting.ko)}
+                  {linkify(locale === 'ko' ? (greeting.ko || greeting.en) : (greeting.en || greeting.ko))}
                 </p>
               </div>
             </div>
