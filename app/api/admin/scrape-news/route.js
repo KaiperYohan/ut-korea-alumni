@@ -3,8 +3,27 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { parseStringPromise } from 'xml2js'
 
-const SITEMAP_URL = 'https://www.sxsk.news/sitemap-posts.xml'
 const SITE_BASE = 'https://www.sxsk.news'
+const SITEMAP_URL = `${SITE_BASE}/sitemap.xml`
+
+// The archive is indexed by two tag pages, one per language. Each post-card on
+// them carries the URL, publish date, title, excerpt and feature image, so a
+// full sync is two requests instead of one per article. The article pages
+// themselves no longer expose a publish date at all (no article:published_time,
+// no <time>, no JSON-LD), which is why these listings are the source of truth.
+const TAG_PAGES = {
+  en: `${SITE_BASE}/tag/english/`,
+  ko: `${SITE_BASE}/tag/korean/`,
+}
+
+// Pages in the sitemap that are navigation, not articles.
+const NAV_PATHS = new Set([
+  '/', '/tag/english/', '/tag/korean/',
+  '/about/', '/about-en/', '/about-ko/',
+  '/subscribe/', '/subscribe-en/', '/subscribe-ko/',
+  '/alumni-news/', '/publishers-letter/', '/texas-news/',
+  '/ut-member-interview/', '/ut-stories/', '/utaka-news/',
+])
 
 function decodeEntities(str) {
   if (!str) return str
@@ -19,172 +38,249 @@ function decodeEntities(str) {
 }
 
 function stripHtml(html) {
-  return html
-    .replace(/<[^>]*>/g, '')
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
-    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, ' ')
-    .trim()
+  if (!html) return ''
+  return decodeEntities(html.replace(/<[^>]*>/g, '')).replace(/&nbsp;/g, ' ').trim()
 }
 
-// Fetch all post URLs from the sitemap
-async function fetchSitemapUrls() {
-  const res = await fetch(SITEMAP_URL, { next: { revalidate: 0 } })
-  const xml = await res.text()
-  const parsed = await parseStringPromise(xml, { explicitArray: false })
-  const urls = parsed.urlset.url
-  if (!urls) return []
-  const items = Array.isArray(urls) ? urls : [urls]
-  return items.map(u => ({
-    url: u.loc,
-    lastmod: u.lastmod || null,
-  }))
+function absolute(url) {
+  if (!url) return null
+  return url.startsWith('http') ? url : SITE_BASE + url
 }
 
-// Extract og:title, og:description, and article content from a page
-async function fetchPageMeta(url) {
-  const res = await fetch(url, { next: { revalidate: 0 } })
+// "Aug 16, 2026" -> ISO string. Parsed as UTC so the date can't drift a day
+// depending on where the server happens to run.
+function parseCardDate(text) {
+  if (!text) return null
+  const ms = Date.parse(`${text} UTC`)
+  return Number.isNaN(ms) ? null : new Date(ms).toISOString()
+}
+
+async function fetchCards(lang) {
+  const res = await fetch(TAG_PAGES[lang], { next: { revalidate: 0 } })
+  if (!res.ok) throw new Error(`${TAG_PAGES[lang]} returned HTTP ${res.status}`)
   const html = await res.text()
 
-  const ogTitle = html.match(/<meta\s+property="og:title"\s+content="([^"]*)"/) ||
-    html.match(/<meta\s+content="([^"]*)"\s+property="og:title"/)
-  const ogDesc = html.match(/<meta\s+property="og:description"\s+content="([^"]*)"/) ||
-    html.match(/<meta\s+content="([^"]*)"\s+property="og:description"/)
-  const ogDate = html.match(/<meta\s+property="article:published_time"\s+content="([^"]*)"/) ||
-    html.match(/<meta\s+content="([^"]*)"\s+property="article:published_time"/)
+  const blocks = html.split('<article class="post-card"').slice(1)
+  const cards = blocks.map((block, order) => {
+    const href = block.match(/<a href="([^"]+)"/)
+    const title = block.match(/<h2>([\s\S]*?)<\/h2>/)
+    if (!href || !title) return null
+    const meta = block.match(/<div class="post-meta">([\s\S]*?)<\/div>/)
+    const excerpt = block.match(/<p>([\s\S]*?)<\/p>/)
+    const image = block.match(/<img src="([^"]+)"/)
+    const metaDate = meta ? decodeEntities(meta[1]).split('·')[0].trim() : ''
+    return {
+      lang,
+      order,
+      url: absolute(href[1]),
+      title: stripHtml(title[1]),
+      description: excerpt ? stripHtml(excerpt[1]) : '',
+      imageUrl: absolute(image ? image[1] : null),
+      pubDate: parseCardDate(metaDate),
+    }
+  }).filter(Boolean)
 
-  const title = ogTitle ? decodeEntities(ogTitle[1]) : ''
-  const description = ogDesc ? decodeEntities(ogDesc[1]) : ''
-  const pubDate = ogDate ? ogDate[1] : null
-
-  return { title, description, pubDate, url }
+  // The theme renders these cards. If it changes shape we want a clear failure
+  // rather than a sync that silently imports nothing.
+  if (!cards.length) {
+    throw new Error(`No post-cards found on ${TAG_PAGES[lang]} — the site theme markup has probably changed.`)
+  }
+  return cards
 }
 
-// Detect Korean by checking for Hangul characters in title
-function isKoreanTitle(title) {
-  // Hangul Unicode range: \uAC00-\uD7AF (syllables), \u3130-\u318F (jamo)
-  return /[\uAC00-\uD7AF\u3130-\u318F]/.test(title)
+// Used only to sanity-check that the tag listings still cover the whole archive.
+async function countSitemapArticles() {
+  try {
+    const res = await fetch(SITEMAP_URL, { next: { revalidate: 0 } })
+    if (!res.ok) return null
+    const parsed = await parseStringPromise(await res.text(), { explicitArray: false })
+    const urls = parsed?.urlset?.url
+    if (!urls) return null
+    const items = Array.isArray(urls) ? urls : [urls]
+    return items.filter(u => !NAV_PATHS.has(String(u.loc).replace(SITE_BASE, ''))).length
+  } catch {
+    return null
+  }
 }
 
-// Normalize smart quotes, dashes, etc. for matching
 function normalizeText(str) {
   return str
-    .replace(/[\u2018\u2019\u0060\u00B4]/g, "'")  // smart single quotes → straight
-    .replace(/[\u201C\u201D]/g, '"')  // smart double quotes → straight
-    .replace(/[\u2013\u2014]/g, '-')  // en/em dash → hyphen
+    .replace(/[‘’`´]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/[–—]/g, '-')
     .toLowerCase()
     .trim()
 }
 
-// Extract volume and section from title for matching
+// Section mapping for EN/KO matching (both directions)
+const SECTION_PAIRS = [
+  [["publisher's letter"], ['발행인의 글']],
+  [['utaka news'], ['utaka 소식']],
+  [['alumni news'], ['동문 이야기']],
+  [['ut stories'], ['ut 소식']],
+  [['texas news'], ['texas 소식']],
+  [['ut member interview', 'ut interview'], ['ut 구성원 인터뷰']],
+  [['lifestyle'], ['라이프스타일']],
+  [['careers', 'career', 'job posting', 'job postings'], ['커리어', '채용공고']],
+  [['call for submittals'], ['제보 받습니다']],
+  [['features'], ['특집 기사']],
+  [['corrections & clarifications'], ['바로잡습니다']],
+]
+
+const KNOWN_SECTIONS = SECTION_PAIRS.flatMap(([en, ko]) => [...en, ...ko])
+
+// Volume and section both live in the title: "Vol. 8 [Texas News] ..." or
+// "제8호 [Texas 소식] ...". Issue cover pages have no [section] bracket.
 function extractSection(title) {
   const normalized = normalizeText(title)
-  const volMatch = normalized.match(/vol\.\s*(\d+)/) || title.match(/제(\d+)호/)
-  const vol = volMatch ? (volMatch[1] || volMatch[2]) : null
-
+  const volMatch = normalized.match(/vol\.?\s*(\d+)/) || title.match(/제\s*(\d+)\s*호/)
+  const vol = volMatch ? volMatch[1] : null
   const sectionMatch = title.match(/\[([^\]]+)\]/)
   const section = sectionMatch ? normalizeText(sectionMatch[1]) : null
-
-  // Check for cover/index pages (e.g. "SXSK Vol. 3 — March 15, 2026")
-  const isCover = /^sxsk\s+(vol\.|제)/i.test(title)
-
+  const isCover = /^sxsk\s+(vol\.?|제)/i.test(title.trim())
   return { vol, section, isCover }
 }
 
-// Section mapping for EN/KO matching (both directions)
-const SECTION_PAIRS = [
-  [["publisher's letter", "publisher's letter"], ["발행인의 글"]],
-  [["utaka news"], ["utaka 소식"]],
-  [["alumni news"], ["동문 이야기"]],
-  [["ut stories"], ["ut 소식"]],
-  [["texas news"], ["texas 소식"]],
-  [["ut member interview", "ut interview"], ["ut 구성원 인터뷰"]],
-  [["lifestyle"], ["라이프스타일"]],
-  [["careers", "career", "job posting", "job postings"], ["커리어", "채용공고"]],
-  [["call for submittals"], ["제보 받습니다"]],
-]
-
 function sectionsMatch(sectionA, sectionB) {
-  if (!sectionA || !sectionB) return 0  // unknown — neutral
-  if (sectionA === sectionB) return 1   // exact match
+  if (!sectionA || !sectionB) return 0
+  if (sectionA === sectionB) return 1
   for (const [enNames, koNames] of SECTION_PAIRS) {
     const allNames = [...enNames, ...koNames]
-    if (allNames.includes(sectionA) && allNames.includes(sectionB)) return 1  // known pair
+    if (allNames.includes(sectionA) && allNames.includes(sectionB)) return 1
   }
-  // Check if both sections are known but in DIFFERENT pairs → mismatch
-  const allKnown = SECTION_PAIRS.flatMap(([en, ko]) => [...en, ...ko])
-  const aKnown = allKnown.includes(sectionA)
-  const bKnown = allKnown.includes(sectionB)
-  if (aKnown && bKnown) return -1  // both known, different sections — block
-  return 0  // one or both unknown — neutral
+  if (KNOWN_SECTIONS.includes(sectionA) && KNOWN_SECTIONS.includes(sectionB)) return -1
+  return 0
 }
 
+// Canonical bucket key so an article and its translation land together.
+function bucketKey(title) {
+  const { vol, section, isCover } = extractSection(title)
+  if (isCover) return `${vol}|__cover__`
+  const canonical = SECTION_PAIRS.find(([en, ko]) => [...en, ...ko].includes(section))
+  return `${vol}|${canonical ? canonical[0][0] : section}`
+}
+
+// Signals that survive translation: shared emoji, and Latin-script proper nouns
+// (names, companies, degree codes) which stay verbatim in the Korean text.
+const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/gu
+const LATIN = /[A-Za-z][A-Za-z.'’-]{2,}|\b\d{4}\b/g
+const LATIN_STOPWORDS = new Set([
+  'vol', 'the', 'and', 'for', 'with', 'from', 'are', 'was', 'new', 'has', 'its',
+  'his', 'her', 'their', 'this', 'that', 'you', 'your', 'our', 'all', 'out',
+  'how', 'who', 'what', 'when', 'part', 'texas', 'news', 'utaka', 'sxsk',
+  'stories', 'lifestyle', 'careers', 'interview', 'member', 'alumni', 'letter',
+  'publisher', 'features', 'corrections', 'clarifications', 'call', 'submittals',
+  'first', 'thursday',
+])
+
+function emojiTokens(text) {
+  return [...new Set(text.match(EMOJI) || [])]
+}
+
+function latinTokens(text) {
+  const withoutSection = text.replace(/\[[^\]]*\]/g, '')
+  const found = withoutSection.match(LATIN) || []
+  return [...new Set(
+    found
+      .map(t => t.toLowerCase().replace(/[.'’-]+$/, ''))
+      .filter(t => t.length > 2 && !LATIN_STOPWORDS.has(t))
+  )]
+}
+
+function slugOf(url) {
+  return String(url).replace(SITE_BASE, '').replace(/^\/|\/$/g, '')
+}
+
+// Returns null when the two can't be the same article, otherwise a confidence score.
+function scorePair(en, ko, enPos, koPos) {
+  const a = extractSection(en.title)
+  const b = extractSection(ko.title)
+
+  if (a.vol && b.vol && a.vol !== b.vol) return null
+  if (a.isCover !== b.isCover) return null
+  const sectionResult = sectionsMatch(a.section, b.section)
+  if (sectionResult === -1) return null
+
+  let score = 0
+  if (a.vol && b.vol && a.vol === b.vol) score += 10
+  if (sectionResult === 1) score += 5
+
+  // Some English posts are published as the Korean slug plus "-eng".
+  const enSlug = slugOf(en.url)
+  if (enSlug.endsWith('-eng') && slugOf(ko.url) === enSlug.slice(0, -4)) score += 100
+
+  score += 6 * emojiTokens(en.title).filter(t => emojiTokens(ko.title).includes(t)).length
+
+  const enLatin = latinTokens(`${en.title} ${en.description}`)
+  const koLatin = latinTokens(`${ko.title} ${ko.description}`)
+  score += 4 * enLatin.filter(t => koLatin.includes(t)).length
+
+  if (en.imageUrl && ko.imageUrl && en.imageUrl === ko.imageUrl) score += 8
+  if (en.pubDate && ko.pubDate && en.pubDate.slice(0, 10) === ko.pubDate.slice(0, 10)) score += 2
+
+  // Both editions run their articles in the same order within an issue section,
+  // which breaks ties the text signals alone can't separate.
+  if (enPos !== null && enPos === koPos) score += 3
+
+  return score
+}
+
+// Global greedy assignment: strongest pairs claim each other first, so a weak
+// candidate can't steal an article that is a better match for something else.
 function matchArticles(enItems, koItems) {
-  const matched = []
-  const usedKo = new Set()
+  const positionOf = (items) => {
+    const seen = new Map()
+    return items.map(item => {
+      const key = bucketKey(item.title)
+      const next = seen.get(key) ?? 0
+      seen.set(key, next + 1)
+      return next
+    })
+  }
+  const enPos = positionOf(enItems)
+  const koPos = positionOf(koItems)
 
-  for (const en of enItems) {
-    const enInfo = extractSection(en.title)
-    let bestMatch = null
-    let bestScore = 0
+  const candidates = []
+  enItems.forEach((en, ei) => {
+    koItems.forEach((ko, ki) => {
+      const sameBucket = bucketKey(en.title) === bucketKey(ko.title)
+      const score = scorePair(en, ko, sameBucket ? enPos[ei] : null, sameBucket ? koPos[ki] : null)
+      if (score !== null && score >= 5) candidates.push({ ei, ki, score })
+    })
+  })
+  // Ties resolve by listing order so repeated syncs pair identically.
+  candidates.sort((x, y) => y.score - x.score || x.ei - y.ei || x.ki - y.ki)
 
-    for (let i = 0; i < koItems.length; i++) {
-      if (usedKo.has(i)) continue
-      const ko = koItems[i]
-      const koInfo = extractSection(ko.title)
-
-      let score = 0
-
-      // If both have volume numbers, they MUST match — skip if different
-      if (enInfo.vol && koInfo.vol && enInfo.vol !== koInfo.vol) continue
-
-      // Same volume
-      if (enInfo.vol && koInfo.vol && enInfo.vol === koInfo.vol) score += 10
-
-      // Both are cover pages of same volume
-      if (enInfo.isCover && koInfo.isCover && enInfo.vol === koInfo.vol) {
-        score += 10
-      }
-
-      // Section matching: 1 = match, 0 = unknown, -1 = known mismatch
-      const sectionResult = sectionsMatch(enInfo.section, koInfo.section)
-      if (sectionResult === -1) continue  // known different sections — skip
-      if (sectionResult === 1) score += 5
-
-      // Date proximity
-      if (en.pubDate && ko.pubDate) {
-        const enDate = new Date(en.pubDate).toISOString().slice(0, 10)
-        const koDate = new Date(ko.pubDate).toISOString().slice(0, 10)
-        if (enDate === koDate) score += 2
-      }
-
-      if (score > bestScore) {
-        bestScore = score
-        bestMatch = { index: i, item: ko }
-      }
-    }
-
-    if (bestMatch && bestScore >= 5) {
-      usedKo.add(bestMatch.index)
-      matched.push({ en, ko: bestMatch.item })
-    } else {
-      matched.push({ en, ko: null })
-    }
+  const takenEn = new Map()
+  const takenKo = new Set()
+  for (const c of candidates) {
+    if (takenEn.has(c.ei) || takenKo.has(c.ki)) continue
+    takenEn.set(c.ei, c.ki)
+    takenKo.add(c.ki)
   }
 
-  // Add unmatched Korean articles
-  for (let i = 0; i < koItems.length; i++) {
-    if (!usedKo.has(i)) {
-      matched.push({ en: null, ko: koItems[i] })
-    }
-  }
-
+  const matched = enItems.map((en, ei) => ({
+    en,
+    ko: takenEn.has(ei) ? koItems[takenEn.get(ei)] : null,
+  }))
+  koItems.forEach((ko, ki) => {
+    if (!takenKo.has(ki)) matched.push({ en: null, ko })
+  })
   return matched
+}
+
+function categorize(title) {
+  const refTitle = title.toLowerCase()
+  if (/\[utaka\s*news\]|\[utaka\s*소식\]/.test(refTitle)) {
+    return { category: 'utaka_news', subcategory: null }
+  }
+  if (/\[ut\s*member\s*interview\]|\[ut\s*구성원\s*인터뷰\]/.test(refTitle)) {
+    return { category: 'members_news', subcategory: 'interview' }
+  }
+  if (/\[careers?\]|\[job\s*postings?\]|\[채용공고\]|\[커리어\]/.test(refTitle)) {
+    return { category: 'pr', subcategory: null }
+  }
+  return { category: 'sxsk', subcategory: null }
 }
 
 export async function DELETE() {
@@ -214,31 +310,15 @@ export async function POST() {
   }
 
   try {
-    // Fetch all post URLs from sitemap
-    const sitemapUrls = await fetchSitemapUrls()
+    const [enItems, koItems] = await Promise.all([fetchCards('en'), fetchCards('ko')])
 
-    // Fetch page metadata for all posts (in batches of 5)
-    const allItems = []
-    for (let i = 0; i < sitemapUrls.length; i += 5) {
-      const batch = sitemapUrls.slice(i, i + 5)
-      const batchResults = await Promise.all(
-        batch.map(u => fetchPageMeta(u.url).catch(() => null))
-      )
-      allItems.push(...batchResults.filter(Boolean))
-    }
+    // Cross-check against the sitemap so a listing that quietly stops showing
+    // the full archive gets surfaced instead of silently under-importing.
+    const sitemapCount = await countSitemapArticles()
+    const warning = sitemapCount !== null && sitemapCount !== enItems.length + koItems.length
+      ? `Tag listings returned ${enItems.length + koItems.length} posts but the sitemap lists ${sitemapCount} articles.`
+      : null
 
-    // Separate EN and KO by detecting Hangul in the title
-    const enItems = []
-    const koItems = []
-    for (const item of allItems) {
-      if (isKoreanTitle(item.title)) {
-        koItems.push(item)
-      } else {
-        enItems.push(item)
-      }
-    }
-
-    // Get existing external URLs to avoid duplicates
     const { rows: existing } = await sql`
       SELECT external_url, external_url_ko FROM news
       WHERE external_url IS NOT NULL OR external_url_ko IS NOT NULL
@@ -249,7 +329,6 @@ export async function POST() {
       if (r.external_url_ko) existingUrls.add(r.external_url_ko)
     }
 
-    // Match EN/KO pairs
     const pairs = matchArticles(enItems, koItems)
 
     let imported = 0
@@ -260,7 +339,6 @@ export async function POST() {
       const enUrl = en?.url || null
       const koUrl = ko?.url || null
 
-      // Skip if already exists
       const enExists = enUrl && existingUrls.has(enUrl)
       const koExists = koUrl && existingUrls.has(koUrl)
       if (enExists || koExists) {
@@ -276,30 +354,18 @@ export async function POST() {
         continue
       }
 
-      const title = en ? en.title : (ko ? ko.title : '')
+      const primary = en || ko
+      const title = primary.title
       const titleKo = ko ? ko.title : null
-      const content = en ? stripHtml(en.description || '') : (ko ? stripHtml(ko.description || '') : '')
-      const contentKo = ko ? stripHtml(ko.description || '') : null
-      const externalUrl = enUrl
-      const externalUrlKo = koUrl
+      const content = primary.description
+      const contentKo = ko ? ko.description : null
+      const imageUrl = en?.imageUrl || ko?.imageUrl || null
       const pubDate = en?.pubDate || ko?.pubDate || new Date().toISOString()
-
-      // Categorize based on title section
-      const refTitle = (en?.title || ko?.title || '').toLowerCase()
-      let category = 'sxsk'
-      let subcategory = null
-      if (/\[utaka\s*news\]|\[utaka\s*소식\]/.test(refTitle)) {
-        category = 'utaka_news'
-      } else if (/\[ut\s*member\s*interview\]|\[ut\s*구성원\s*인터뷰\]/.test(refTitle)) {
-        category = 'members_news'
-        subcategory = 'interview'
-      } else if (/\[careers?\]|\[job\s*postings?\]|\[채용공고\]|\[커리어\]/.test(refTitle)) {
-        category = 'pr'
-      }
+      const { category, subcategory } = categorize(primary.title)
 
       await sql`
-        INSERT INTO news (title, title_ko, content, content_ko, external_url, external_url_ko, category, subcategory, approval_status, published, created_at, updated_at)
-        VALUES (${title}, ${titleKo}, ${content}, ${contentKo}, ${externalUrl}, ${externalUrlKo}, ${category}, ${subcategory}, 'approved', true, ${new Date(pubDate).toISOString()}, NOW())
+        INSERT INTO news (title, title_ko, content, content_ko, external_url, external_url_ko, image_url, category, subcategory, approval_status, published, created_at, updated_at)
+        VALUES (${title}, ${titleKo}, ${content}, ${contentKo}, ${enUrl}, ${koUrl}, ${imageUrl}, ${category}, ${subcategory}, 'approved', true, ${pubDate}, NOW())
       `
       if (enUrl) existingUrls.add(enUrl)
       if (koUrl) existingUrls.add(koUrl)
@@ -318,7 +384,9 @@ export async function POST() {
       updated,
       skipped,
       total: pairs.length,
+      unpaired: pairs.filter(p => !p.en || !p.ko).length,
       fetched: { en: enItems.length, ko: koItems.length },
+      warning,
       pairs: pairDebug,
     })
   } catch (error) {
