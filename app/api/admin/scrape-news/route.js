@@ -1,4 +1,4 @@
-import { sql } from '@/lib/db'
+import { sql, withTransaction } from '@/lib/db'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { parseStringPromise } from 'xml2js'
@@ -303,11 +303,79 @@ export async function DELETE() {
   }
 }
 
-export async function POST() {
+async function readExistingUrls(db) {
+  const { rows } = await db`
+    SELECT external_url, external_url_ko FROM news
+    WHERE external_url IS NOT NULL OR external_url_ko IS NOT NULL
+  `
+  const urls = new Set()
+  for (const r of rows) {
+    if (r.external_url) urls.add(r.external_url)
+    if (r.external_url_ko) urls.add(r.external_url_ko)
+  }
+  return urls
+}
+
+async function importPairs(db, pairs, existingUrls) {
+  let imported = 0
+  let skipped = 0
+  let updated = 0
+
+  for (const { en, ko } of pairs) {
+    const enUrl = en?.url || null
+    const koUrl = ko?.url || null
+
+    const enExists = enUrl && existingUrls.has(enUrl)
+    const koExists = koUrl && existingUrls.has(koUrl)
+    if (enExists || koExists) {
+      if (enUrl && koUrl && enExists && !koExists) {
+        await db`
+          UPDATE news SET external_url_ko = ${koUrl}
+          WHERE external_url = ${enUrl} AND (external_url_ko IS NULL OR external_url_ko = '')
+        `
+        existingUrls.add(koUrl)
+        updated++
+      }
+      skipped++
+      continue
+    }
+
+    const primary = en || ko
+    const title = primary.title
+    const titleKo = ko ? ko.title : null
+    const content = primary.description
+    const contentKo = ko ? ko.description : null
+    const imageUrl = en?.imageUrl || ko?.imageUrl || null
+    const pubDate = en?.pubDate || ko?.pubDate || new Date().toISOString()
+    const { category, subcategory } = categorize(primary.title)
+
+    await db`
+      INSERT INTO news (title, title_ko, content, content_ko, external_url, external_url_ko, image_url, category, subcategory, approval_status, published, created_at, updated_at)
+      VALUES (${title}, ${titleKo}, ${content}, ${contentKo}, ${enUrl}, ${koUrl}, ${imageUrl}, ${category}, ${subcategory}, 'approved', true, ${pubDate}, NOW())
+    `
+    if (enUrl) existingUrls.add(enUrl)
+    if (koUrl) existingUrls.add(koUrl)
+    imported++
+  }
+
+  return { imported, skipped, updated }
+}
+
+// POST            — import anything not already stored.
+// POST?mode=replace — clear the scraped articles and rebuild them.
+//
+// Both fetch and parse the entire archive before touching the database. That
+// ordering matters: replace mode used to delete first and import second, so a
+// source-side failure emptied the archive with nothing to put back. The delete
+// and re-import also share one transaction, so a failure part way through
+// rolls back rather than leaving a partial archive.
+export async function POST(request) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.isAdmin) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const replace = new URL(request.url).searchParams.get('mode') === 'replace'
 
   try {
     const [enItems, koItems] = await Promise.all([fetchCards('en'), fetchCards('ko')])
@@ -319,57 +387,24 @@ export async function POST() {
       ? `Tag listings returned ${enItems.length + koItems.length} posts but the sitemap lists ${sitemapCount} articles.`
       : null
 
-    const { rows: existing } = await sql`
-      SELECT external_url, external_url_ko FROM news
-      WHERE external_url IS NOT NULL OR external_url_ko IS NOT NULL
-    `
-    const existingUrls = new Set()
-    for (const r of existing) {
-      if (r.external_url) existingUrls.add(r.external_url)
-      if (r.external_url_ko) existingUrls.add(r.external_url_ko)
-    }
-
     const pairs = matchArticles(enItems, koItems)
 
-    let imported = 0
-    let skipped = 0
-    let updated = 0
+    let deleted = 0
+    let counts
 
-    for (const { en, ko } of pairs) {
-      const enUrl = en?.url || null
-      const koUrl = ko?.url || null
-
-      const enExists = enUrl && existingUrls.has(enUrl)
-      const koExists = koUrl && existingUrls.has(koUrl)
-      if (enExists || koExists) {
-        if (enUrl && koUrl && enExists && !koExists) {
-          await sql`
-            UPDATE news SET external_url_ko = ${koUrl}
-            WHERE external_url = ${enUrl} AND (external_url_ko IS NULL OR external_url_ko = '')
-          `
-          existingUrls.add(koUrl)
-          updated++
-        }
-        skipped++
-        continue
-      }
-
-      const primary = en || ko
-      const title = primary.title
-      const titleKo = ko ? ko.title : null
-      const content = primary.description
-      const contentKo = ko ? ko.description : null
-      const imageUrl = en?.imageUrl || ko?.imageUrl || null
-      const pubDate = en?.pubDate || ko?.pubDate || new Date().toISOString()
-      const { category, subcategory } = categorize(primary.title)
-
-      await sql`
-        INSERT INTO news (title, title_ko, content, content_ko, external_url, external_url_ko, image_url, category, subcategory, approval_status, published, created_at, updated_at)
-        VALUES (${title}, ${titleKo}, ${content}, ${contentKo}, ${enUrl}, ${koUrl}, ${imageUrl}, ${category}, ${subcategory}, 'approved', true, ${pubDate}, NOW())
-      `
-      if (enUrl) existingUrls.add(enUrl)
-      if (koUrl) existingUrls.add(koUrl)
-      imported++
+    if (replace) {
+      counts = await withTransaction(async (tx) => {
+        const { rows } = await tx`
+          DELETE FROM news
+          WHERE (external_url IS NOT NULL AND external_url LIKE ${`${SITE_BASE}%`})
+             OR (external_url_ko IS NOT NULL AND external_url_ko LIKE ${`${SITE_BASE}%`})
+          RETURNING id
+        `
+        deleted = rows.length
+        return importPairs(tx, pairs, await readExistingUrls(tx))
+      })
+    } else {
+      counts = await importPairs(sql, pairs, await readExistingUrls(sql))
     }
 
     // Debug: show how articles were paired
@@ -380,9 +415,10 @@ export async function POST() {
 
     return Response.json({
       success: true,
-      imported,
-      updated,
-      skipped,
+      deleted,
+      imported: counts.imported,
+      updated: counts.updated,
+      skipped: counts.skipped,
       total: pairs.length,
       unpaired: pairs.filter(p => !p.en || !p.ko).length,
       fetched: { en: enItems.length, ko: koItems.length },

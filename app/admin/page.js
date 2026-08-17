@@ -246,7 +246,8 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/scrape-news', { method: 'POST' })
       const data = await res.json()
       if (res.ok) {
-        setScrapeResult(`Imported ${data.imported} articles, skipped ${data.skipped} duplicates.`)
+        const warnMsg = data.warning ? ` Warning: ${data.warning}` : ''
+        setScrapeResult(`Imported ${data.imported} articles, skipped ${data.skipped} duplicates.${warnMsg}`)
         fetchAll()
       } else {
         setScrapeResult(`Error: ${data.error}`)
@@ -262,22 +263,22 @@ export default function AdminPage() {
     setScraping(true)
     setScrapeResult(null)
     try {
-      const delRes = await fetch('/api/admin/scrape-news', { method: 'DELETE' })
-      const delData = await delRes.json()
-      if (!delRes.ok) { setScrapeResult(`Error clearing: ${delData.error}`); setScraping(false); return }
-
-      const res = await fetch('/api/admin/scrape-news', { method: 'POST' })
+      // One request: the articles are fetched before anything is deleted, and
+      // the clear and re-import share a transaction. A failure here leaves the
+      // existing articles untouched rather than wiping them.
+      const res = await fetch('/api/admin/scrape-news?mode=replace', { method: 'POST' })
       const data = await res.json()
       if (res.ok) {
         // Backfill OG images for newly imported articles
         const imgRes = await fetch('/api/news/backfill-images', { method: 'POST' })
         const imgData = await imgRes.json()
         const imgMsg = imgRes.ok ? ` Backfilled ${imgData.updated}/${imgData.total} images.` : ''
+        const warnMsg = data.warning ? `\n\nWarning: ${data.warning}` : ''
         const pairInfo = data.pairs ? `\n\nPairs:\n${data.pairs.map(p => `EN: ${p.en || '—'} | KO: ${p.ko || '—'}`).join('\n')}` : ''
-        setScrapeResult(`Cleared ${delData.deleted} old articles. Re-imported ${data.imported} articles.${imgMsg}${pairInfo}`)
+        setScrapeResult(`Cleared ${data.deleted} old articles. Re-imported ${data.imported} articles.${imgMsg}${warnMsg}${pairInfo}`)
         fetchAll()
       } else {
-        setScrapeResult(`Cleared ${delData.deleted} but import failed: ${data.error}`)
+        setScrapeResult(`Nothing was deleted — import failed: ${data.error}`)
       }
     } catch {
       setScrapeResult('Failed to clear & re-sync.')
