@@ -69,7 +69,8 @@ export async function GET() {
       SELECT membership_level AS level,
              COUNT(*) AS total,
              SUM(CASE WHEN is_approved = true THEN 1 ELSE 0 END) AS approved,
-             SUM(CASE WHEN is_approved = false THEN 1 ELSE 0 END) AS pending
+             SUM(CASE WHEN is_approved = false AND COALESCE(status, 'pending') = 'pending' THEN 1 ELSE 0 END) AS pending,
+             SUM(CASE WHEN is_approved = false AND COALESCE(status, 'pending') <> 'pending' THEN 1 ELSE 0 END) AS inactive
       FROM members
       GROUP BY membership_level
     `)

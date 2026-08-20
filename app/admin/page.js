@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useT } from '../components/LanguageProvider'
 import { COMMITTEES, buildOrgSlots } from '@/lib/committees'
+import { MEMBER_STATUSES, statusMeta } from '@/lib/memberStatus'
 
 export default function AdminPage() {
   const t = useT()
@@ -96,6 +97,21 @@ export default function AdminPage() {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, action, level }),
+    })
+    fetchAll()
+  }
+
+  const handleMemberStatus = async (member, status) => {
+    const next = MEMBER_STATUSES.find(o => o.value === status)
+    if (!next) return
+    // Statuses that revoke sign-in are hard to notice once applied, so confirm.
+    if (!next.canLogin && !confirm(`Set ${member.name} to ${next.label}?
+
+${next.description}`)) return
+    await fetch('/api/admin/members', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: member.id, action: 'set_status', status }),
     })
     fetchAll()
   }
@@ -456,7 +472,7 @@ export default function AdminPage() {
 
   if (!session?.user?.isAdmin) return null
 
-  const pendingCount = members.filter(m => !m.is_approved).length
+  const pendingCount = members.filter(m => statusMeta(m.status, m.is_approved).value === 'pending').length
   const executiveCount = members.filter(m => m.membership_level === 'executive').length
   const fullCount = members.filter(m => m.membership_level === 'full').length
   const generalCount = members.filter(m => !m.membership_level || m.membership_level === 'general').length
@@ -526,7 +542,7 @@ export default function AdminPage() {
             </div>
             <button
               onClick={() => {
-                const headers = ['Name', 'Name (KO)', 'Email', 'Graduation Year', 'Major', 'Location', 'Company', 'Title', 'Membership Level', 'Approved', 'Admin', 'Joined']
+                const headers = ['Name', 'Name (KO)', 'Email', 'Graduation Year', 'Major', 'Location', 'Company', 'Title', 'Membership Level', 'Status', 'Admin', 'Joined']
                 const escape = (v) => {
                   if (v == null) return ''
                   const s = String(v)
@@ -534,7 +550,7 @@ export default function AdminPage() {
                 }
                 const rows = members.map(m => [
                   m.name, m.name_ko, m.email, m.graduation_year, m.major, m.location, m.company, m.title,
-                  m.membership_level || 'general', m.is_approved ? 'Yes' : 'No', m.is_admin ? 'Yes' : 'No',
+                  m.membership_level || 'general', statusMeta(m.status, m.is_approved).label, m.is_admin ? 'Yes' : 'No',
                   m.created_at ? new Date(m.created_at).toLocaleDateString() : ''
                 ].map(escape).join(','))
                 const csv = '\uFEFF' + [headers.join(','), ...rows].join('\n')
@@ -553,14 +569,16 @@ export default function AdminPage() {
             {filteredMembers.length === 0 && (
               <p className="text-sm text-charcoal-light py-8 text-center">No members match &ldquo;{memberSearch}&rdquo;.</p>
             )}
-            {filteredMembers.map(member => (
-              <div key={member.id} className={`card p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${!member.is_approved ? 'border-amber-300 bg-amber-50/30' : ''}`}>
+            {filteredMembers.map(member => {
+              const st = statusMeta(member.status, member.is_approved)
+              return (
+              <div key={member.id} className={`card p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${st.value === 'pending' ? 'border-amber-300 bg-amber-50/30' : ''}${!st.active && st.value !== 'pending' ? 'border-red-200 bg-red-50/20' : ''}`}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-charcoal text-sm">{member.name}</span>
                     {member.name_ko && <span className="text-xs text-charcoal-light">({member.name_ko})</span>}
                     {member.is_admin && <span className="text-[0.6rem] font-bold bg-burnt-orange text-white px-1.5 py-0.5 rounded uppercase">Admin</span>}
-                    {!member.is_approved && <span className="text-[0.6rem] font-bold bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded uppercase">Pending</span>}
+                    {st.value !== 'active' && <span className={`text-[0.6rem] font-bold px-1.5 py-0.5 rounded uppercase ${st.badge}`} title={st.description}>{st.label}</span>}
                     <span className={`text-[0.6rem] font-bold px-1.5 py-0.5 rounded uppercase ${
                       member.membership_level === 'executive' ? 'bg-purple-100 text-purple-800' :
                       member.membership_level === 'full' ? 'bg-blue-100 text-blue-800' :
@@ -584,10 +602,18 @@ export default function AdminPage() {
                     <option value="full">Full</option>
                     <option value="executive">Executive</option>
                   </select>
-                  {!member.is_approved ? (
+                  <select
+                    value={st.value}
+                    onChange={(e) => handleMemberStatus(member, e.target.value)}
+                    title={st.description}
+                    className="px-2 py-1.5 text-xs font-semibold rounded-lg border border-charcoal/15 bg-white text-charcoal cursor-pointer focus:outline-none focus:ring-2 focus:ring-burnt-orange/30"
+                  >
+                    {MEMBER_STATUSES.map(o => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                  {st.value === 'pending' && (
                     <button onClick={() => handleMemberAction(member.id, 'approve')} className="px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg cursor-pointer border-none hover:bg-green-700">Approve</button>
-                  ) : (
-                    <button onClick={() => handleMemberAction(member.id, 'unapprove')} className="px-3 py-1.5 bg-charcoal/10 text-charcoal text-xs font-semibold rounded-lg cursor-pointer border-none hover:bg-charcoal/20">Unapprove</button>
                   )}
                   {!member.is_admin ? (
                     <button onClick={() => handleMemberAction(member.id, 'make_admin')} className="px-3 py-1.5 bg-burnt-orange/10 text-burnt-orange text-xs font-semibold rounded-lg cursor-pointer border-none hover:bg-burnt-orange/20">Make Admin</button>
@@ -597,7 +623,8 @@ export default function AdminPage() {
                   <button onClick={() => handleMemberAction(member.id, 'delete')} className="px-3 py-1.5 bg-red-100 text-red-700 text-xs font-semibold rounded-lg cursor-pointer border-none hover:bg-red-200">Delete</button>
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
           )
         })()}
@@ -1171,8 +1198,9 @@ export default function AdminPage() {
                         <tr className="border-b border-charcoal/10">
                           <th className="text-left py-2 font-medium text-charcoal-light">Level</th>
                           <th className="text-right py-2 font-medium text-charcoal-light">Total</th>
-                          <th className="text-right py-2 font-medium text-charcoal-light">Approved</th>
+                          <th className="text-right py-2 font-medium text-charcoal-light">Active</th>
                           <th className="text-right py-2 font-medium text-charcoal-light">Pending</th>
+                          <th className="text-right py-2 font-medium text-charcoal-light">Inactive</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1182,6 +1210,7 @@ export default function AdminPage() {
                             <td className="py-2 text-right">{l.total}</td>
                             <td className="py-2 text-right text-green-700">{l.approved}</td>
                             <td className="py-2 text-right text-amber-600">{l.pending}</td>
+                            <td className="py-2 text-right text-charcoal-light">{l.inactive ?? 0}</td>
                           </tr>
                         ))}
                       </tbody>

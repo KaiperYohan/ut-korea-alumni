@@ -30,6 +30,8 @@ export default function LoginPage() {
     if (result?.error) {
       if (result.error.includes('EMAIL_NOT_VERIFIED')) {
         setError(t('auth.errors.emailNotVerified'))
+      } else if (result.error.includes('ACCOUNT_INACTIVE')) {
+        setError(t('auth.errors.accountInactive'))
       } else {
         setError(t('auth.errors.invalid'))
       }

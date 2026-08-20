@@ -155,7 +155,8 @@
       "mismatch": "Passwords do not match",
       "required": "Please fill in all required fields",
       "privacyRequired": "You must agree to the collection of personal information to sign up.",
-      "emailNotVerified": "Please verify your email before signing in. Check your inbox for the verification link."
+      "emailNotVerified": "Please verify your email before signing in. Check your inbox for the verification link.",
+      "accountInactive": "This account is no longer active. Please contact the association if you believe this is a mistake."
     }
   },
   "verify": {

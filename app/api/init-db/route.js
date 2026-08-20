@@ -193,6 +193,16 @@ export async function GET(request) {
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS privacy_consent_date TIMESTAMP`
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS marketing_consent BOOLEAN DEFAULT false`
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS marketing_consent_date TIMESTAMP`
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS status VARCHAR(20)`
+
+    // Backfill status from the old approved/pending boolean. Only touches rows
+    // that have never been given a status, so it is safe to re-run.
+    await sql`
+      UPDATE members
+      SET status = CASE WHEN is_approved THEN 'active' ELSE 'pending' END
+      WHERE status IS NULL
+    `
+    await sql`ALTER TABLE members ALTER COLUMN status SET DEFAULT 'pending'`
 
     // Auto-verify existing approved members
     await sql`UPDATE members SET email_verified = true WHERE is_approved = true AND email_verified = false`
