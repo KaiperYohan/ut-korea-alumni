@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useT } from '../components/LanguageProvider'
+import { COMMITTEES, buildOrgSlots } from '@/lib/committees'
 
 export default function AdminPage() {
   const t = useT()
@@ -15,7 +16,7 @@ export default function AdminPage() {
   const [articles, setArticles] = useState([])
   const [submissions, setSubmissions] = useState([])
   const [loading, setLoading] = useState(true)
-  const [orgPositions, setOrgPositions] = useState([])
+  const [orgSlots, setOrgSlots] = useState(() => buildOrgSlots([]))
   const [orgSaving, setOrgSaving] = useState(false)
   const [pastPresidents, setPastPresidents] = useState([])
   const [pastPresidentsSaving, setPastPresidentsSaving] = useState(false)
@@ -73,7 +74,7 @@ export default function AdminPage() {
     setEvents(eventsData.events || [])
     setArticles(newsData.articles || [])
     setSubmissions(subsData.submissions || [])
-    setOrgPositions(orgData.positions || [])
+    setOrgSlots(buildOrgSlots(orgData.positions || []))
     setPastPresidents(ppData.pastPresidents || [])
     setTeams(teamsData.teams || [])
     if (settingsData.settings) {
@@ -292,58 +293,41 @@ export default function AdminPage() {
     fetchAll()
   }
 
-  // Organization committee definitions
-  const committees = [
-    { key: 'board', name: 'Board of Directors', nameKo: '이사회', slots: [
-      { role: 'president', label: 'President', count: 1 },
-      { role: 'vice_president', label: 'Vice President', count: 2 },
-      { role: 'general_secretary', label: 'General Secretary', count: 1 },
-      { role: 'treasurer', label: 'Treasurer', count: 1 },
-    ]},
-    { key: 'executive', name: 'Executive Committee', nameKo: '집행위원회', slots: [
-      { role: 'chair', label: 'Chair', count: 1 },
-      { role: 'vice_chair', label: 'Vice Chair', count: 2 },
-      { role: 'general_secretary', label: 'General Secretary', count: 1 },
-      { role: 'historian', label: 'Historian', count: 1 },
-    ]},
-    { key: 'membership', name: 'Membership Development Committee', nameKo: '회원개발위원회', slots: [
-      { role: 'chair', label: 'Chair', count: 1 },
-      { role: 'vice_chair', label: 'Vice Chair', count: 5 },
-      { role: 'member', label: 'Committee Member', count: 6 },
-    ]},
-    { key: 'social', name: 'Social Affairs Committee', nameKo: '사회활동위원회', slots: [
-      { role: 'chair', label: 'Chair', count: 1 },
-      { role: 'vice_chair', label: 'Vice Chair', count: 3 },
-      { role: 'member', label: 'Committee Member', count: 5 },
-    ]},
-    { key: 'nominating', name: 'Nominating Committee', nameKo: '인사위원회', slots: [
-      { role: 'chair', label: 'Chair', count: 1 },
-      { role: 'member', label: 'Committee Member', count: 2 },
-    ]},
-    { key: 'finance', name: 'Finance and Planning Committee', nameKo: '재정기획위원회', slots: [
-      { role: 'chair', label: 'Chair (Treasurer)', count: 1 },
-      { role: 'vice_chair', label: 'Vice Chair', count: 2 },
-      { role: 'member', label: 'Committee Member', count: 7 },
-    ]},
-  ]
+  // Slot helpers — orgSlots holds one array of member ids per committee/role,
+  // seeded from saved positions and grown/shrunk by the admin.
+  const roleSlots = (committeeKey, role) => orgSlots[committeeKey]?.[role] ?? []
 
-  // Build org state from fetched positions
-  const getOrgMember = (committee, role, index) => {
-    const matches = orgPositions.filter(p => p.committee === committee && p.role === role)
-    return matches[index]?.member_id?.toString() || ''
+  const setRoleSlots = (committeeKey, role, next) => {
+    setOrgSlots(prev => ({
+      ...prev,
+      [committeeKey]: { ...(prev[committeeKey] || {}), [role]: next },
+    }))
   }
 
-  const handleOrgSave = async (formData) => {
+  const setSlotMember = (committeeKey, role, index, memberId) => {
+    const next = [...roleSlots(committeeKey, role)]
+    next[index] = memberId
+    setRoleSlots(committeeKey, role, next)
+  }
+
+  const addSlot = (committeeKey, role) => {
+    setRoleSlots(committeeKey, role, [...roleSlots(committeeKey, role), ''])
+  }
+
+  const removeSlot = (committeeKey, role, index) => {
+    setRoleSlots(committeeKey, role, roleSlots(committeeKey, role).filter((_, i) => i !== index))
+  }
+
+  const handleOrgSave = async () => {
     setOrgSaving(true)
     const positions = []
     let sortOrder = 0
-    for (const committee of committees) {
-      for (const slot of committee.slots) {
-        for (let i = 0; i < slot.count; i++) {
-          const memberId = formData.get(`${committee.key}_${slot.role}_${i}`)
+    for (const committee of COMMITTEES) {
+      for (const roleInfo of committee.roles) {
+        for (const memberId of roleSlots(committee.key, roleInfo.role)) {
           positions.push({
             committee: committee.key,
-            role: slot.role,
+            role: roleInfo.role,
             member_id: memberId || null,
             sort_order: sortOrder++,
           })
@@ -1392,35 +1376,71 @@ export default function AdminPage() {
         {activeTab === 'org' && (
           <div className="card p-6 md:p-8">
             <h2 className="font-display text-xl font-semibold text-charcoal mb-6">Organization Chart</h2>
-            <p className="text-sm text-charcoal-light mb-6">Assign members to committee positions. Only approved members are shown.</p>
-            <form onSubmit={(e) => { e.preventDefault(); handleOrgSave(new FormData(e.target)) }}>
+            <p className="text-sm text-charcoal-light mb-6">
+              Assign members to committee positions. Only approved members are shown.
+              Use <span className="font-medium">+ Add slot</span> to open another position and
+              <span className="font-medium"> ×</span> to remove one. Empty slots are not saved.
+            </p>
+            <form onSubmit={(e) => { e.preventDefault(); handleOrgSave() }}>
               <div className="space-y-8">
-                {committees.map(committee => (
+                {COMMITTEES.map(committee => (
                   <div key={committee.key} className="border border-charcoal/10 rounded-xl p-5">
-                    <h3 className="font-display text-lg font-semibold text-charcoal mb-1">{committee.name}</h3>
-                    <p className="text-xs text-charcoal-light mb-4">{committee.nameKo}</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {committee.slots.flatMap(slot =>
-                        Array.from({ length: slot.count }, (_, i) => (
-                          <div key={`${slot.role}_${i}`}>
-                            <label className="block text-xs font-medium text-charcoal-light mb-1">
-                              {slot.label}{slot.count > 1 ? ` ${i + 1}` : ''}
-                            </label>
-                            <select
-                              name={`${committee.key}_${slot.role}_${i}`}
-                              defaultValue={getOrgMember(committee.key, slot.role, i)}
-                              className={inputClass}
-                            >
-                              <option value="">— Empty —</option>
-                              {members.filter(m => m.is_approved).map(m => (
-                                <option key={m.id} value={m.id}>
-                                  {m.name}{m.name_ko ? ` (${m.name_ko})` : ''} — {m.graduation_year || '?'}
-                                </option>
+                    <h3 className="font-display text-lg font-semibold text-charcoal mb-1">{committee.en}</h3>
+                    <p className="text-xs text-charcoal-light mb-4">{committee.ko}</p>
+                    <div className="space-y-4">
+                      {committee.roles.map(roleInfo => {
+                        const slots = roleSlots(committee.key, roleInfo.role)
+                        const min = roleInfo.minSlots ?? 1
+                        const atMax = roleInfo.maxSlots != null && slots.length >= roleInfo.maxSlots
+                        return (
+                          <div key={roleInfo.role}>
+                            <div className="flex items-center justify-between gap-3 mb-1.5">
+                              <label className="text-xs font-medium text-charcoal-light">
+                                {roleInfo.en}
+                                <span className="text-charcoal-light/60"> · {slots.length}</span>
+                              </label>
+                              {!atMax && (
+                                <button
+                                  type="button"
+                                  onClick={() => addSlot(committee.key, roleInfo.role)}
+                                  className="text-xs font-medium text-burnt-orange hover:text-burnt-dark cursor-pointer bg-transparent border-0 px-0"
+                                >
+                                  + Add slot
+                                </button>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              {slots.map((value, i) => (
+                                <div key={i} className="flex items-center gap-2">
+                                  <select
+                                    value={value}
+                                    onChange={(e) => setSlotMember(committee.key, roleInfo.role, i, e.target.value)}
+                                    className={inputClass}
+                                    aria-label={`${committee.en} — ${roleInfo.en} ${i + 1}`}
+                                  >
+                                    <option value="">— Empty —</option>
+                                    {members.filter(m => m.is_approved).map(m => (
+                                      <option key={m.id} value={m.id}>
+                                        {m.name}{m.name_ko ? ` (${m.name_ko})` : ''} — {m.graduation_year || '?'}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeSlot(committee.key, roleInfo.role, i)}
+                                    disabled={slots.length <= min}
+                                    title={slots.length <= min ? `At least ${min} slot${min > 1 ? 's' : ''} required` : 'Remove this slot'}
+                                    aria-label={`Remove ${roleInfo.en} slot ${i + 1}`}
+                                    className="shrink-0 w-8 h-8 rounded-lg border border-charcoal/15 bg-white text-charcoal-light hover:text-red-600 hover:border-red-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer leading-none"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
                               ))}
-                            </select>
+                            </div>
                           </div>
-                        ))
-                      )}
+                        )
+                      })}
                     </div>
                   </div>
                 ))}
