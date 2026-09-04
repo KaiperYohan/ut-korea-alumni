@@ -1,7 +1,8 @@
 import { sql } from '@/lib/db'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { currentDuesYear, requiredDuesYear, DUES_AMOUNT_KRW } from '@/lib/dues'
+import { currentDuesYear, requiredDuesYear, resolveDuesAmount, resolveDuesTier } from '@/lib/dues'
+import { readDuesRates, memberDuesProfile } from '@/lib/duesRecord'
 import { isActiveMember } from '@/lib/memberStatus'
 
 async function requireAdmin() {
@@ -29,6 +30,8 @@ export async function GET(request) {
              p.payment_count,
              p.last_paid_at,
              p.payments,
+             (SELECT array_agg(DISTINCT o.role) FROM org_positions o
+               WHERE o.member_id = m.id AND o.role IS NOT NULL) AS roles,
              (SELECT MAX(dues_year) FROM dues_payments d2 WHERE d2.member_id = m.id) AS latest_dues_year
       FROM members m
       LEFT JOIN (
@@ -50,7 +53,15 @@ export async function GET(request) {
     // resigned, expelled and deceased members are not chased for dues. Executives
     // are billable like anyone else — they are expected to pay, their benefits
     // just never depend on having done so.
-    const billable = members.filter(m => isActiveMember(m.status, m.is_approved))
+    const rates = await readDuesRates()
+    const billable = members
+      .filter(m => isActiveMember(m.status, m.is_approved))
+      .map(m => ({
+        ...m,
+        roles: m.roles || [],
+        expectedAmount: resolveDuesAmount(rates, { roles: m.roles || [], membershipLevel: m.membership_level }),
+        tier: resolveDuesTier(rates, { roles: m.roles || [], membershipLevel: m.membership_level }),
+      }))
 
     const paid = billable.filter(m => m.payment_count > 0)
     const unpaid = billable.filter(m => !m.payment_count)
@@ -59,12 +70,15 @@ export async function GET(request) {
       duesYear,
       currentDuesYear: currentDuesYear(),
       requiredDuesYear: requiredDuesYear(),
-      amount: DUES_AMOUNT_KRW,
+      rates,
       summary: {
         billable: billable.length,
         paid: paid.length,
         unpaid: unpaid.length,
         collected: paid.reduce((sum, m) => sum + Number(m.paid_total || 0), 0),
+        // What the year should bring in if everyone pays their own rate, so the
+        // collected figure has something to be read against.
+        expected: billable.reduce((sum, m) => sum + Number(m.expectedAmount || 0), 0),
       },
       members: billable,
     })
@@ -85,9 +99,17 @@ export async function POST(request) {
   }
 
   try {
+    // Falls back to the rate this member's position carries, not a flat figure,
+    // so an omitted amount cannot silently record a president as paying general
+    // member dues.
+    const supplied = amount === null || amount === undefined || amount === '' ? null : Number(amount)
+    const resolvedAmount = Number.isFinite(supplied)
+      ? supplied
+      : (await memberDuesProfile(memberId)).expectedAmount
+
     const { rows } = await sql`
       INSERT INTO dues_payments (member_id, dues_year, amount, paid_at, method, note, recorded_by)
-      VALUES (${memberId}, ${duesYear}, ${amount ?? DUES_AMOUNT_KRW}, ${paidAt || null},
+      VALUES (${memberId}, ${duesYear}, ${resolvedAmount}, ${paidAt || null},
               ${method || 'bank transfer'}, ${note || null}, ${parseInt(session.user.id)})
       RETURNING *
     `

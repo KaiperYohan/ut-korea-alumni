@@ -1,39 +1,74 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useT, useLanguage } from '../components/LanguageProvider'
-import { currentDuesYear, duesYearLabel, duesDeadline, paidThrough } from '@/lib/dues'
+import { currentDuesYear, duesYearLabel, duesDeadline, paidThrough, duesRates, formatKrw } from '@/lib/dues'
 
 export default function DuesPage() {
   const t = useT()
   const { locale } = useLanguage()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
 
-  // Derived from the session, which recomputes benefits on every read, so this
-  // reflects a lapse without the member signing out.
-  const duesYear = currentDuesYear()
-  const isExecutive = session?.user?.membershipLevel === 'executive'
-  const duesYearPaid = session?.user?.duesYearPaid ?? null
-  const benefitsActive = Boolean(session?.user?.hasFullBenefits)
+  // Read live rather than from the session token, so a payment recorded moments
+  // ago shows straight away instead of waiting out the token refresh — and so the
+  // amount shown is the one this member's position actually owes.
+  const [duesInfo, setDuesInfo] = useState(null)
+  const [generalRate, setGeneralRate] = useState(null)
 
-  const statusCard = !session ? null : isExecutive ? {
+  useEffect(() => {
+    if (status === 'loading') return
+    let cancelled = false
+    const load = async () => {
+      try {
+        if (session) {
+          const res = await fetch('/api/dues/me')
+          if (res.ok && !cancelled) setDuesInfo(await res.json())
+        } else {
+          // Signed out visitors still get the headline rate, from public settings.
+          const res = await fetch('/api/settings')
+          if (res.ok && !cancelled) setGeneralRate(duesRates((await res.json()).settings || {}).general)
+        }
+      } catch {
+        // Falls back to the translated default amount below.
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [session, status])
+
+  const duesYear = duesInfo?.duesYear ?? currentDuesYear()
+  const isExecutive = duesInfo?.membershipLevel === 'executive'
+  const benefitsActive = Boolean(duesInfo?.benefitsActive)
+
+  const amountValue = duesInfo
+    ? formatKrw(duesInfo.expectedAmount)
+    : generalRate !== null
+      ? formatKrw(generalRate)
+      : t('dues.amountValue')
+
+  const statusCard = !duesInfo ? null : isExecutive ? {
     tone: 'border-purple-200 bg-purple-50/40',
     title: t('dues.statusExecTitle'),
     body: t('dues.statusExecBody'),
-    rows: [[t('dues.statusYearLabel'), duesYearLabel(duesYear)]],
+    rows: [
+      [t('dues.statusYearLabel'), duesYearLabel(duesYear)],
+      [t('dues.amount'), formatKrw(duesInfo.expectedAmount)],
+    ],
   } : benefitsActive ? {
     tone: 'border-green-200 bg-green-50/40',
     title: t('dues.statusCurrentTitle'),
     body: t('dues.statusCurrentBody'),
-    rows: [[t('dues.statusThroughLabel'), paidThrough(duesYearPaid)]],
+    rows: [[t('dues.statusThroughLabel'), duesInfo.paidThrough || paidThrough(duesInfo.duesYearPaid)]],
   } : {
     tone: 'border-amber-300 bg-amber-50/50',
     title: t('dues.statusOutstandingTitle'),
     body: t('dues.statusOutstandingBody'),
     rows: [
       [t('dues.statusYearLabel'), duesYearLabel(duesYear)],
-      [t('dues.statusDeadlineLabel'), duesDeadline(duesYear)],
+      [t('dues.amount'), formatKrw(duesInfo.expectedAmount)],
+      [t('dues.statusDeadlineLabel'), duesInfo.deadline || duesDeadline(duesYear)],
     ],
   }
 
@@ -90,7 +125,7 @@ export default function DuesPage() {
               </svg>
               <div>
                 <p className="text-xs text-charcoal-light font-medium uppercase tracking-wide">{t('dues.amount')}</p>
-                <p className="text-lg font-display font-bold text-charcoal">{t('dues.amountValue')}</p>
+                <p className="text-lg font-display font-bold text-charcoal">{amountValue}</p>
               </div>
             </div>
 

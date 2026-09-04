@@ -6,7 +6,9 @@ import { useRouter } from 'next/navigation'
 import { useT } from '../components/LanguageProvider'
 import { COMMITTEES, buildOrgSlots } from '@/lib/committees'
 import { MEMBER_STATUSES, statusMeta } from '@/lib/memberStatus'
-import { currentDuesYear, duesYearLabel, duesDeadline, duesLapseDate, selectableDuesYears, isDuesCurrent, paidThrough, DUES_AMOUNT_KRW } from '@/lib/dues'
+import { currentDuesYear, duesYearLabel, duesDeadline, duesLapseDate, selectableDuesYears, isDuesCurrent, paidThrough, formatKrw, duesRateSettingKey, DUES_RATE_TIERS, DUES_AMOUNT_KRW } from '@/lib/dues'
+
+const duesTierLabel = (tier) => DUES_RATE_TIERS.find(t => t.key === tier)?.en || 'General Member'
 
 export default function AdminPage() {
   const t = useT()
@@ -146,7 +148,8 @@ ${next.description}`)) return
   const openRecord = (member) => {
     setRecordingId(member.id)
     setRecordForm({
-      amount: DUES_AMOUNT_KRW,
+      // Prefilled with the rate this member's position carries, not a flat figure.
+      amount: member.expectedAmount ?? DUES_AMOUNT_KRW,
       paidAt: new Date().toISOString().slice(0, 10),
       note: '',
     })
@@ -634,12 +637,13 @@ ${next.description}`)) return
 
                 {dues && !duesLoading && (
                   <>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
                       {[
                         { label: 'Billable', value: dues.summary.billable, tone: 'text-charcoal' },
                         { label: 'Paid', value: dues.summary.paid, tone: 'text-green-700' },
                         { label: 'Unpaid', value: dues.summary.unpaid, tone: 'text-amber-600' },
-                        { label: 'Collected', value: `${dues.summary.collected.toLocaleString()} KRW`, tone: 'text-charcoal' },
+                        { label: 'Collected', value: `${dues.summary.collected.toLocaleString()} KRW`, tone: 'text-green-700' },
+                        { label: 'Expected', value: `${(dues.summary.expected || 0).toLocaleString()} KRW`, tone: 'text-charcoal-light' },
                       ].map(s => (
                         <div key={s.label} className="p-3 rounded-xl bg-cream-light/50">
                           <p className="text-[0.65rem] uppercase tracking-wide text-charcoal-light font-medium">{s.label}</p>
@@ -706,6 +710,16 @@ ${next.description}`)) return
                                 {m.payment_count > 0 && ` · ${Number(m.paid_total).toLocaleString()} KRW`}
                                 {m.last_paid_at && ` · ${new Date(m.last_paid_at).toLocaleDateString()}`}
                                 {!m.payment_count && m.latest_dues_year && ` · last paid ${duesYearLabel(m.latest_dues_year)}`}
+                              </p>
+                              <p className="text-xs mt-0.5">
+                                <span className="text-charcoal-light">Rate: </span>
+                                <span className="font-medium text-charcoal">{formatKrw(m.expectedAmount)}</span>
+                                <span className="text-charcoal-light"> ({duesTierLabel(m.tier)})</span>
+                                {m.payment_count > 0 && Number(m.paid_total) !== Number(m.expectedAmount) && (
+                                  <span className="ml-2 text-amber-700 font-medium">
+                                    paid {Number(m.paid_total) > Number(m.expectedAmount) ? 'over' : 'under'} by {formatKrw(Math.abs(Number(m.paid_total) - Number(m.expectedAmount)))}
+                                  </span>
+                                )}
                               </p>
                             </div>
                             {recordingId !== m.id && (
@@ -1322,6 +1336,34 @@ ${next.description}`)) return
                       placeholder="15+"
                     />
                   </div>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-display text-base font-semibold text-charcoal mb-3">Annual Dues Rates</h3>
+                <p className="text-sm text-charcoal-light mb-4">
+                  Amount in KRW owed for one dues year. A member holding more than one position pays the
+                  highest rate that applies — the president who also chairs a committee pays the president
+                  rate. Leave blank to use the default shown in the placeholder.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {DUES_RATE_TIERS.map(tier => {
+                    const key = duesRateSettingKey(tier.key)
+                    return (
+                      <div key={tier.key}>
+                        <label className="block text-xs font-medium text-charcoal mb-1">
+                          {tier.en} <span className="text-charcoal-light font-normal">{tier.ko}</span>
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={siteSettings[key] ?? ''}
+                          onChange={(e) => setSiteSettings(prev => ({ ...prev, [key]: e.target.value }))}
+                          className={inputClass}
+                          placeholder={tier.fallback.toLocaleString('en-US')}
+                        />
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
               <button
