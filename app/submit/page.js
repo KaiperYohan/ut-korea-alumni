@@ -66,8 +66,7 @@ export default function SubmitPage() {
     return null
   }
 
-  const membershipLevel = session.user.membershipLevel
-  const canWrite = ['executive', 'full'].includes(membershipLevel) || session.user.isAdmin
+  const canWrite = session.user.hasFullBenefits || session.user.isAdmin
 
   if (!canWrite) {
     return (

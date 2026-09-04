@@ -116,10 +116,10 @@ export default function MembersPage() {
     return <div className="min-h-screen flex items-center justify-center pt-20 text-charcoal-light">{t('common.loading')}</div>
   }
 
-  // Check membership level — only executive, full, and admin can access
-  const membershipLevel = session?.user?.membershipLevel
+  // Executives and members whose dues are current. The server enforces this too;
+  // this only avoids showing a directory the API would refuse to serve.
   const isAdmin = session?.user?.isAdmin
-  if (!isAdmin && !['executive', 'full'].includes(membershipLevel)) {
+  if (!isAdmin && !session?.user?.hasFullBenefits) {
     return (
       <div className="min-h-screen pt-24 pb-16 px-5 md:px-8">
         <div className="max-w-2xl mx-auto text-center">

@@ -20,7 +20,8 @@ export async function POST(request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  if (!canCreateEvent(session.user.membershipLevel, session.user.isAdmin)) {
+  // Role-based, so the session value is enough — dues never gate event creation.
+  if (!canCreateEvent({ membershipLevel: session.user.membershipLevel }, session.user.isAdmin)) {
     return Response.json({ error: 'Event creation requires Executive membership or Admin' }, { status: 403 })
   }
 

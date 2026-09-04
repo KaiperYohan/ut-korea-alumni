@@ -3,11 +3,39 @@
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useT, useLanguage } from '../components/LanguageProvider'
+import { currentDuesYear, duesYearLabel, duesDeadline, paidThrough } from '@/lib/dues'
 
 export default function DuesPage() {
   const t = useT()
   const { locale } = useLanguage()
   const { data: session } = useSession()
+
+  // Derived from the session, which recomputes benefits on every read, so this
+  // reflects a lapse without the member signing out.
+  const duesYear = currentDuesYear()
+  const isExecutive = session?.user?.membershipLevel === 'executive'
+  const duesYearPaid = session?.user?.duesYearPaid ?? null
+  const benefitsActive = Boolean(session?.user?.hasFullBenefits)
+
+  const statusCard = !session ? null : isExecutive ? {
+    tone: 'border-purple-200 bg-purple-50/40',
+    title: t('dues.statusExecTitle'),
+    body: t('dues.statusExecBody'),
+    rows: [[t('dues.statusYearLabel'), duesYearLabel(duesYear)]],
+  } : benefitsActive ? {
+    tone: 'border-green-200 bg-green-50/40',
+    title: t('dues.statusCurrentTitle'),
+    body: t('dues.statusCurrentBody'),
+    rows: [[t('dues.statusThroughLabel'), paidThrough(duesYearPaid)]],
+  } : {
+    tone: 'border-amber-300 bg-amber-50/50',
+    title: t('dues.statusOutstandingTitle'),
+    body: t('dues.statusOutstandingBody'),
+    rows: [
+      [t('dues.statusYearLabel'), duesYearLabel(duesYear)],
+      [t('dues.statusDeadlineLabel'), duesDeadline(duesYear)],
+    ],
+  }
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-5 md:px-8">
@@ -16,6 +44,24 @@ export default function DuesPage() {
           <h1 className="section-heading">{t('dues.title')}</h1>
           <p className="section-subheading">{t('dues.subtitle')}</p>
         </div>
+
+        {statusCard && (
+          <div className={`card p-6 mb-6 border ${statusCard.tone}`}>
+            <h2 className="font-display text-lg font-semibold text-charcoal mb-2">{statusCard.title}</h2>
+            <p className="text-sm text-charcoal-light leading-relaxed">{statusCard.body}</p>
+            <div className="mt-4 flex flex-wrap gap-x-8 gap-y-2">
+              {statusCard.rows.map(([label, value]) => (
+                <div key={label}>
+                  <p className="text-[0.65rem] uppercase tracking-wide text-charcoal-light font-medium">{label}</p>
+                  <p className="text-sm font-semibold text-charcoal">{value}</p>
+                </div>
+              ))}
+            </div>
+            {!benefitsActive && !isExecutive && (
+              <p className="text-xs text-charcoal-light mt-4">{t('dues.statusRecordedNote')}</p>
+            )}
+          </div>
+        )}
 
         {/* Full Member Benefits */}
         <div className="card p-6 md:p-8 mb-6">

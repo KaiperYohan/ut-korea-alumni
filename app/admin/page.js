@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useT } from '../components/LanguageProvider'
 import { COMMITTEES, buildOrgSlots } from '@/lib/committees'
 import { MEMBER_STATUSES, statusMeta } from '@/lib/memberStatus'
+import { currentDuesYear, duesYearLabel, duesDeadline, duesLapseDate, selectableDuesYears, DUES_AMOUNT_KRW } from '@/lib/dues'
 
 export default function AdminPage() {
   const t = useT()
@@ -30,6 +31,15 @@ export default function AdminPage() {
   const [analytics, setAnalytics] = useState(null)
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
   const [analyticsError, setAnalyticsError] = useState(null)
+
+  // Dues state
+  const [duesYear, setDuesYear] = useState(() => currentDuesYear())
+  const [dues, setDues] = useState(null)
+  const [duesLoading, setDuesLoading] = useState(false)
+  const [duesError, setDuesError] = useState(null)
+  const [duesSearch, setDuesSearch] = useState('')
+  const [duesFilter, setDuesFilter] = useState('unpaid')
+  const [recordingId, setRecordingId] = useState(null)
 
   // Event form state
   const [eventForm, setEventForm] = useState({ title: '', titleKo: '', description: '', descriptionKo: '', eventDate: '', location: '', locationKo: '', maxAttendees: '', externalUrl: '', timeTba: false, locationTba: false, attendeeOverride: '' })
@@ -114,6 +124,59 @@ ${next.description}`)) return
       body: JSON.stringify({ id: member.id, action: 'set_status', status }),
     })
     fetchAll()
+  }
+
+  const [recordForm, setRecordForm] = useState({ amount: DUES_AMOUNT_KRW, paidAt: '', note: '' })
+
+  const fetchDues = async (year) => {
+    const target = year ?? duesYear
+    setDuesLoading(true)
+    setDuesError(null)
+    try {
+      const res = await fetch(`/api/admin/dues?year=${target}`)
+      const data = await res.json()
+      if (res.ok) setDues(data)
+      else setDuesError(data.error || 'Failed to load dues.')
+    } catch {
+      setDuesError('Failed to load dues.')
+    }
+    setDuesLoading(false)
+  }
+
+  const openRecord = (member) => {
+    setRecordingId(member.id)
+    setRecordForm({
+      amount: DUES_AMOUNT_KRW,
+      paidAt: new Date().toISOString().slice(0, 10),
+      note: '',
+    })
+  }
+
+  const submitRecord = async (member) => {
+    // Instalments and corrections are legitimate, so a second payment is allowed
+    // rather than blocked — but it is worth a look before it goes in.
+    if (member.payment_count > 0 &&
+        !confirm(`${member.name} already has ${member.payment_count} payment(s) recorded for ${duesYearLabel(duesYear)}. Record another?`)) {
+      return
+    }
+    const res = await fetch('/api/admin/dues', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        memberId: member.id,
+        duesYear,
+        amount: Number(recordForm.amount) || null,
+        paidAt: recordForm.paidAt || null,
+        note: recordForm.note || null,
+      }),
+    })
+    if (res.ok) {
+      setRecordingId(null)
+      fetchDues()
+    } else {
+      const data = await res.json()
+      alert(data.error || 'Failed to record payment.')
+    }
   }
 
   const translateText = async (text, from, to) => {
@@ -483,6 +546,7 @@ ${next.description}`)) return
   const tabs = [
     { id: 'analytics', label: 'Dashboard' },
     { id: 'members', label: `Members ${pendingCount > 0 ? `(${pendingCount})` : ''}` },
+    { id: 'dues', label: 'Dues' },
     { id: 'submissions', label: `Submissions ${pendingSubmissions > 0 ? `(${pendingSubmissions})` : ''}` },
     { id: 'events', label: 'Events' },
     { id: 'news', label: 'News/SXSK' },
@@ -503,6 +567,7 @@ ${next.description}`)) return
               onClick={() => {
                 setActiveTab(tab.id)
                 if (tab.id === 'analytics' && !analytics && !analyticsLoading) fetchAnalytics()
+                if (tab.id === 'dues' && !dues && !duesLoading) fetchDues()
               }}
               className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer bg-transparent border-t-0 border-x-0 ${
                 activeTab === tab.id
@@ -514,6 +579,179 @@ ${next.description}`)) return
             </button>
           ))}
         </div>
+
+        {/* Dues Tab */}
+        {activeTab === 'dues' && (() => {
+          const q = duesSearch.trim().toLowerCase()
+          const all = dues?.members || []
+          const matches = all.filter(m => {
+            if (duesFilter === 'paid' && !m.payment_count) return false
+            if (duesFilter === 'unpaid' && m.payment_count) return false
+            if (!q) return true
+            return [m.name, m.name_ko, m.email, String(m.graduation_year || '')]
+              .some(v => (v || '').toLowerCase().includes(q))
+          })
+          const isOpenYear = duesYear === dues?.currentDuesYear
+          return (
+            <div className="space-y-4">
+              <div className="card p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                  <div>
+                    <h2 className="font-display text-lg font-semibold text-charcoal">
+                      Dues {duesYearLabel(duesYear)}
+                    </h2>
+                    <p className="text-xs text-charcoal-light mt-1">
+                      Covers Oct 1 {duesYear} – Sep 30 {duesYear + 1}. Due {duesDeadline(duesYear)}; unpaid members
+                      lapse to general benefits on {duesLapseDate(duesYear)}.
+                    </p>
+                  </div>
+                  <select
+                    value={duesYear}
+                    onChange={(e) => { const y = Number(e.target.value); setDuesYear(y); fetchDues(y) }}
+                    className="px-3 py-2 text-sm rounded-lg border border-charcoal/15 bg-white text-charcoal cursor-pointer"
+                  >
+                    {selectableDuesYears().map(y => (
+                      <option key={y} value={y}>{duesYearLabel(y)}{y === currentDuesYear() ? ' (open)' : ''}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {duesLoading && <p className="text-sm text-charcoal-light py-4">Loading dues…</p>}
+                {duesError && <p className="text-sm text-red-700 py-4">{duesError}</p>}
+
+                {dues && !duesLoading && (
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                      {[
+                        { label: 'Billable', value: dues.summary.billable, tone: 'text-charcoal' },
+                        { label: 'Paid', value: dues.summary.paid, tone: 'text-green-700' },
+                        { label: 'Unpaid', value: dues.summary.unpaid, tone: 'text-amber-600' },
+                        { label: 'Collected', value: `${dues.summary.collected.toLocaleString()} KRW`, tone: 'text-charcoal' },
+                      ].map(s => (
+                        <div key={s.label} className="p-3 rounded-xl bg-cream-light/50">
+                          <p className="text-[0.65rem] uppercase tracking-wide text-charcoal-light font-medium">{s.label}</p>
+                          <p className={`font-display font-bold ${s.tone}`}>{s.value}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {!isOpenYear && (
+                      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+                        Viewing a year other than the open one ({duesYearLabel(dues.currentDuesYear)}).
+                      </p>
+                    )}
+
+                    <div className="flex flex-col sm:flex-row gap-2 mb-4">
+                      <input
+                        type="text"
+                        value={duesSearch}
+                        onChange={(e) => setDuesSearch(e.target.value)}
+                        placeholder="Search name, email, or class year…"
+                        className="flex-1 px-3 py-2 text-sm rounded-lg border border-charcoal/15"
+                      />
+                      <div className="flex gap-1">
+                        {['unpaid', 'paid', 'all'].map(f => (
+                          <button
+                            key={f}
+                            onClick={() => setDuesFilter(f)}
+                            className={`px-3 py-2 text-xs font-semibold rounded-lg cursor-pointer border-none capitalize ${
+                              duesFilter === f ? 'bg-burnt-orange text-white' : 'bg-charcoal/10 text-charcoal'
+                            }`}
+                          >
+                            {f}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-charcoal-light mb-2">{matches.length} shown</p>
+
+                    <div className="space-y-2">
+                      {matches.length === 0 && (
+                        <p className="text-sm text-charcoal-light py-6 text-center">No members match.</p>
+                      )}
+                      {matches.map(m => (
+                        <div key={m.id} className="border border-charcoal/10 rounded-xl p-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-semibold text-charcoal text-sm">{m.name}</span>
+                                {m.name_ko && <span className="text-xs text-charcoal-light">({m.name_ko})</span>}
+                                {m.membership_level === 'executive' && (
+                                  <span className="text-[0.6rem] font-bold bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded uppercase">Exec</span>
+                                )}
+                                {m.payment_count > 0 ? (
+                                  <span className="text-[0.6rem] font-bold bg-green-100 text-green-800 px-1.5 py-0.5 rounded uppercase">
+                                    Paid{m.payment_count > 1 ? ` ×${m.payment_count}` : ''}
+                                  </span>
+                                ) : (
+                                  <span className="text-[0.6rem] font-bold bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded uppercase">Unpaid</span>
+                                )}
+                              </div>
+                              <p className="text-xs text-charcoal-light truncate">
+                                {m.email}
+                                {m.payment_count > 0 && ` · ${Number(m.paid_total).toLocaleString()} KRW`}
+                                {m.last_paid_at && ` · ${new Date(m.last_paid_at).toLocaleDateString()}`}
+                                {!m.payment_count && m.latest_dues_year && ` · last paid ${duesYearLabel(m.latest_dues_year)}`}
+                              </p>
+                            </div>
+                            {recordingId !== m.id && (
+                              <button
+                                onClick={() => openRecord(m)}
+                                className="px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg cursor-pointer border-none hover:bg-green-700 shrink-0"
+                              >
+                                Record payment
+                              </button>
+                            )}
+                          </div>
+
+                          {recordingId === m.id && (
+                            <div className="mt-3 pt-3 border-t border-charcoal/10 flex flex-col sm:flex-row gap-2">
+                              <input
+                                type="number"
+                                value={recordForm.amount}
+                                onChange={(e) => setRecordForm({ ...recordForm, amount: e.target.value })}
+                                placeholder="Amount"
+                                className="px-3 py-2 text-sm rounded-lg border border-charcoal/15 sm:w-32"
+                              />
+                              <input
+                                type="date"
+                                value={recordForm.paidAt}
+                                onChange={(e) => setRecordForm({ ...recordForm, paidAt: e.target.value })}
+                                className="px-3 py-2 text-sm rounded-lg border border-charcoal/15 sm:w-40"
+                              />
+                              <input
+                                type="text"
+                                value={recordForm.note}
+                                onChange={(e) => setRecordForm({ ...recordForm, note: e.target.value })}
+                                placeholder="Bank memo / note"
+                                className="flex-1 px-3 py-2 text-sm rounded-lg border border-charcoal/15"
+                              />
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => submitRecord(m)}
+                                  className="px-3 py-2 bg-burnt-orange text-white text-xs font-semibold rounded-lg cursor-pointer border-none"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  onClick={() => setRecordingId(null)}
+                                  className="px-3 py-2 bg-charcoal/10 text-charcoal text-xs font-semibold rounded-lg cursor-pointer border-none"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Members Tab */}
         {activeTab === 'members' && (() => {

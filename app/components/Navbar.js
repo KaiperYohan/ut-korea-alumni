@@ -79,8 +79,9 @@ export default function Navbar() {
   const textColor = scrolled || !isHome ? 'text-charcoal' : 'text-white'
   const logoColor = scrolled || !isHome ? 'text-burnt-orange' : 'text-white'
 
-  const membershipLevel = session?.user?.membershipLevel
-  const canWrite = ['executive', 'full'].includes(membershipLevel) || session?.user?.isAdmin
+  // hasFullBenefits is recomputed on every session read, so this reflects a dues
+  // lapse without the member having to sign out and back in.
+  const canWrite = session?.user?.hasFullBenefits || session?.user?.isAdmin
 
   const isActive = (href) => {
     if (href === '/') return pathname === '/'

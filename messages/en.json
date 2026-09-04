@@ -204,7 +204,17 @@
     "accountNumber": "Account Number",
     "accountHolder": "Account Holder",
     "note": "Please transfer the annual dues to the account number above. When making your payment, please include your name and graduation year as used in the KakaoTalk open chat.",
-    "joinBtn": "Join Our Network"
+    "joinBtn": "Join Our Network",
+    "statusCurrentTitle": "Your membership is current",
+    "statusCurrentBody": "Full member benefits are active, including access to the alumni directory.",
+    "statusOutstandingTitle": "Dues outstanding",
+    "statusOutstandingBody": "We have no record of your dues for this year. Pay by the deadline below to keep your full member benefits, including the alumni directory.",
+    "statusExecTitle": "Executive member",
+    "statusExecBody": "Your benefits do not depend on dues, but executives are still expected to pay.",
+    "statusYearLabel": "Dues year",
+    "statusDeadlineLabel": "Pay by",
+    "statusThroughLabel": "Benefits through",
+    "statusRecordedNote": "Already paid? It can take a few days to be recorded."
   },
   "membership": {
     "level": "Membership",

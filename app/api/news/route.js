@@ -2,6 +2,7 @@ import { sql } from '@/lib/db'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { canWritePost } from '@/lib/permissions'
+import { memberEntitlement } from '@/lib/duesRecord'
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
@@ -65,7 +66,6 @@ export async function POST(request) {
   }
 
   const isAdmin = session.user.isAdmin
-  const membershipLevel = session.user.membershipLevel
 
   // Admin creating SXSK or UTAKA News articles
   if (category === 'sxsk' || category === 'utaka_news' || !category) {
@@ -83,8 +83,8 @@ export async function POST(request) {
 
   // Member submitting members_news or pr
   if (category === 'members_news' || category === 'pr') {
-    if (!canWritePost(membershipLevel) && !isAdmin) {
-      return Response.json({ error: 'Full or Executive membership required to submit posts' }, { status: 403 })
+    if (!isAdmin && !canWritePost(await memberEntitlement(session.user.id))) {
+      return Response.json({ error: 'Current membership dues required to submit posts' }, { status: 403 })
     }
 
     if (category === 'members_news' && !subcategory) {

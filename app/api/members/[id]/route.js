@@ -2,6 +2,7 @@ import { sql } from '@/lib/db'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { canAccessDirectory } from '@/lib/permissions'
+import { memberEntitlement } from '@/lib/duesRecord'
 
 export async function GET(request, { params }) {
   const session = await getServerSession(authOptions)
@@ -9,8 +10,8 @@ export async function GET(request, { params }) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  if (!canAccessDirectory(session.user.membershipLevel) && !session.user.isAdmin) {
-    return Response.json({ error: 'Directory access requires Full or Executive membership' }, { status: 403 })
+  if (!session.user.isAdmin && !canAccessDirectory(await memberEntitlement(session.user.id))) {
+    return Response.json({ error: 'Directory access requires current membership dues' }, { status: 403 })
   }
 
   const { id } = await params

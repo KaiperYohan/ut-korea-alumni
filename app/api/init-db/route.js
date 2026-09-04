@@ -204,6 +204,60 @@ export async function GET(request) {
     `
     await sql`ALTER TABLE members ALTER COLUMN status SET DEFAULT 'pending'`
 
+    // Annual dues ledger. One row per payment rather than a flag on the member,
+    // so the record of who paid survives the year rolling over. Deliberately has
+    // no unique constraint on (member_id, dues_year): instalments and corrections
+    // are legitimate, and the admin UI warns about duplicates instead.
+    await sql`
+      CREATE TABLE IF NOT EXISTS dues_payments (
+        id SERIAL PRIMARY KEY,
+        member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+        dues_year INTEGER NOT NULL,
+        amount INTEGER,
+        paid_at DATE,
+        method VARCHAR(30),
+        note TEXT,
+        recorded_by INTEGER REFERENCES members(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `
+    await sql`CREATE INDEX IF NOT EXISTS idx_dues_member_year ON dues_payments (member_id, dues_year)`
+
+    // One-time seed. Members marked 'full' before dues were tracked are credited
+    // with dues year 2025, the partial year between launch and the first Oct 1
+    // collection, so they keep benefits until Jan 1 2027 and then owe 2026 like
+    // everyone else. paid_at is left null because only the level was ever stored
+    // and the real payment dates are not recoverable.
+    //
+    // Executives are deliberately not seeded: 'executive' has been doing double
+    // duty as role and payment state, so there is no way to tell which of them
+    // paid, and inventing rows would put fiction in the ledger. They keep
+    // benefits regardless, and their real payments get recorded from this October.
+    const { rows: ledger } = await sql`SELECT COUNT(*)::int AS c FROM dues_payments`
+    if (ledger[0].c === 0) {
+      await sql`
+        INSERT INTO dues_payments (member_id, dues_year, amount, paid_at, method, note)
+        SELECT id, 2025, 50000, NULL, 'backfill',
+               'Backfilled from membership level at launch; original payment date unknown'
+        FROM members
+        WHERE membership_level = 'full'
+      `
+    }
+
+    // membership_level now carries only the role, so 'full' is retired once the
+    // member's payment is safely in the ledger. Guarded on that row existing
+    // rather than run blind: this must never strip benefits from someone who has
+    // no payment recorded, and it has to stay safe to re-run.
+    //
+    // Ordering matters here. Until code that derives benefits from the ledger is
+    // deployed, the running app still reads membership_level = 'full' directly,
+    // so this step has to land with or after that deploy, never before it.
+    await sql`
+      UPDATE members SET membership_level = 'general'
+      WHERE membership_level = 'full'
+        AND EXISTS (SELECT 1 FROM dues_payments d WHERE d.member_id = members.id)
+    `
+
     // Auto-verify existing approved members
     await sql`UPDATE members SET email_verified = true WHERE is_approved = true AND email_verified = false`
 
