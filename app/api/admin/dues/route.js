@@ -28,13 +28,17 @@ export async function GET(request) {
              COALESCE(p.paid_total, 0) AS paid_total,
              p.payment_count,
              p.last_paid_at,
+             p.payments,
              (SELECT MAX(dues_year) FROM dues_payments d2 WHERE d2.member_id = m.id) AS latest_dues_year
       FROM members m
       LEFT JOIN (
         SELECT member_id,
                SUM(COALESCE(amount, 0)) AS paid_total,
                COUNT(*)::int AS payment_count,
-               MAX(paid_at) AS last_paid_at
+               MAX(paid_at) AS last_paid_at,
+               json_agg(json_build_object(
+                 'id', id, 'amount', amount, 'paidAt', paid_at, 'note', note, 'method', method
+               ) ORDER BY paid_at NULLS LAST, id) AS payments
         FROM dues_payments
         WHERE dues_year = ${duesYear}
         GROUP BY member_id

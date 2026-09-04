@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useT } from '../components/LanguageProvider'
 import { COMMITTEES, buildOrgSlots } from '@/lib/committees'
 import { MEMBER_STATUSES, statusMeta } from '@/lib/memberStatus'
-import { currentDuesYear, duesYearLabel, duesDeadline, duesLapseDate, selectableDuesYears, DUES_AMOUNT_KRW } from '@/lib/dues'
+import { currentDuesYear, duesYearLabel, duesDeadline, duesLapseDate, selectableDuesYears, isDuesCurrent, paidThrough, DUES_AMOUNT_KRW } from '@/lib/dues'
 
 export default function AdminPage() {
   const t = useT()
@@ -150,6 +150,17 @@ ${next.description}`)) return
       paidAt: new Date().toISOString().slice(0, 10),
       note: '',
     })
+  }
+
+  const handleDeletePayment = async (member, payment) => {
+    const detail = [
+      payment.amount ? `${Number(payment.amount).toLocaleString()} KRW` : null,
+      payment.paidAt ? new Date(payment.paidAt).toLocaleDateString() : null,
+    ].filter(Boolean).join(' · ')
+    if (!confirm(`Remove this ${duesYearLabel(duesYear)} payment for ${member.name}?\n\n${detail || 'No amount or date recorded'}\n\nIf it is their only payment for the year, they lose full member benefits.`)) return
+    const res = await fetch(`/api/admin/dues?id=${payment.id}`, { method: 'DELETE' })
+    if (res.ok) fetchDues()
+    else alert('Failed to remove payment.')
   }
 
   const submitRecord = async (member) => {
@@ -537,8 +548,10 @@ ${next.description}`)) return
 
   const pendingCount = members.filter(m => statusMeta(m.status, m.is_approved).value === 'pending').length
   const executiveCount = members.filter(m => m.membership_level === 'executive').length
-  const fullCount = members.filter(m => m.membership_level === 'full').length
-  const generalCount = members.filter(m => !m.membership_level || m.membership_level === 'general').length
+  // Full is derived from the dues ledger now, not stored, so this counts members
+  // whose dues are current. Executives are counted separately above.
+  const fullCount = members.filter(m => m.membership_level !== 'executive' && isDuesCurrent(m.dues_year_paid)).length
+  const generalCount = members.filter(m => m.membership_level !== 'executive' && !isDuesCurrent(m.dues_year_paid)).length
   const inputClass = "w-full px-3 py-2 rounded-lg border border-charcoal/15 bg-white text-charcoal text-sm focus:outline-none focus:ring-2 focus:ring-burnt-orange/30 focus:border-burnt-orange"
 
   const pendingSubmissions = submissions.length
@@ -705,6 +718,29 @@ ${next.description}`)) return
                             )}
                           </div>
 
+                          {/* Individual payments, so a mis-recorded one can be removed. */}
+                          {(m.payments || []).length > 0 && (
+                            <div className="mt-2 pt-2 border-t border-charcoal/5 space-y-1">
+                              {m.payments.map(p => (
+                                <div key={p.id} className="flex items-center gap-2 text-xs text-charcoal-light">
+                                  <span className="font-medium text-charcoal">
+                                    {p.amount ? `${Number(p.amount).toLocaleString()} KRW` : 'No amount'}
+                                  </span>
+                                  <span>{p.paidAt ? new Date(p.paidAt).toLocaleDateString() : 'no date'}</span>
+                                  {p.method && <span className="text-charcoal-light/70">{p.method}</span>}
+                                  {p.note && <span className="truncate italic">{p.note}</span>}
+                                  <button
+                                    onClick={() => handleDeletePayment(m, p)}
+                                    title="Remove this payment"
+                                    className="ml-auto px-2 py-0.5 bg-red-100 text-red-700 text-[0.65rem] font-semibold rounded cursor-pointer border-none hover:bg-red-200 shrink-0"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
                           {recordingId === m.id && (
                             <div className="mt-3 pt-3 border-t border-charcoal/10 flex flex-col sm:flex-row gap-2">
                               <input
@@ -780,7 +816,7 @@ ${next.description}`)) return
             </div>
             <button
               onClick={() => {
-                const headers = ['Name', 'Name (KO)', 'Email', 'Graduation Year', 'Major', 'Location', 'Company', 'Title', 'Membership Level', 'Status', 'Admin', 'Joined']
+                const headers = ['Name', 'Name (KO)', 'Email', 'Graduation Year', 'Major', 'Location', 'Company', 'Title', 'Role', 'Full Member', 'Dues Paid', 'Status', 'Admin', 'Joined']
                 const escape = (v) => {
                   if (v == null) return ''
                   const s = String(v)
@@ -788,7 +824,10 @@ ${next.description}`)) return
                 }
                 const rows = members.map(m => [
                   m.name, m.name_ko, m.email, m.graduation_year, m.major, m.location, m.company, m.title,
-                  m.membership_level || 'general', statusMeta(m.status, m.is_approved).label, m.is_admin ? 'Yes' : 'No',
+                  m.membership_level === 'executive' ? 'executive' : 'general',
+                  (m.membership_level === 'executive' || isDuesCurrent(m.dues_year_paid)) ? 'Yes' : 'No',
+                  m.dues_year_paid ? duesYearLabel(m.dues_year_paid) : '',
+                  statusMeta(m.status, m.is_approved).label, m.is_admin ? 'Yes' : 'No',
                   m.created_at ? new Date(m.created_at).toLocaleDateString() : ''
                 ].map(escape).join(','))
                 const csv = '\uFEFF' + [headers.join(','), ...rows].join('\n')
@@ -809,25 +848,51 @@ ${next.description}`)) return
             )}
             {filteredMembers.map(member => {
               const st = statusMeta(member.status, member.is_approved)
+              // Same check the server enforces, so the badge cannot disagree with
+              // whether the member actually has directory access.
+              const isExec = member.membership_level === 'executive'
+              const duesCurrent = isDuesCurrent(member.dues_year_paid)
+              const isFull = isExec || duesCurrent
               return (
               <div key={member.id} className={`card p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${st.value === 'pending' ? 'border-amber-300 bg-amber-50/30' : ''}${!st.active && st.value !== 'pending' ? 'border-red-200 bg-red-50/20' : ''}`}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-charcoal text-sm">{member.name}</span>
+                    <span className={`text-sm ${isFull ? 'font-bold text-burnt-orange' : 'font-semibold text-charcoal'}`}>{member.name}</span>
                     {member.name_ko && <span className="text-xs text-charcoal-light">({member.name_ko})</span>}
                     {member.is_admin && <span className="text-[0.6rem] font-bold bg-burnt-orange text-white px-1.5 py-0.5 rounded uppercase">Admin</span>}
                     {st.value !== 'active' && <span className={`text-[0.6rem] font-bold px-1.5 py-0.5 rounded uppercase ${st.badge}`} title={st.description}>{st.label}</span>}
+                    {isFull && (
+                      <span
+                        className="text-[0.6rem] font-bold bg-green-100 text-green-800 px-1.5 py-0.5 rounded uppercase"
+                        title={isExec
+                          ? 'Executive — full benefits regardless of dues'
+                          : `Dues current — paid ${duesYearLabel(member.dues_year_paid)}, benefits through ${paidThrough(member.dues_year_paid)}`}
+                      >
+                        Full
+                      </span>
+                    )}
                     <span className={`text-[0.6rem] font-bold px-1.5 py-0.5 rounded uppercase ${
-                      member.membership_level === 'executive' ? 'bg-purple-100 text-purple-800' :
-                      member.membership_level === 'full' ? 'bg-blue-100 text-blue-800' :
-                      'bg-charcoal/10 text-charcoal-light'
+                      isExec ? 'bg-purple-100 text-purple-800' : 'bg-charcoal/10 text-charcoal-light'
                     }`}>
-                      {member.membership_level || 'general'}
+                      {isExec ? 'executive' : 'general'}
                     </span>
                   </div>
                   <div className="text-xs text-charcoal-light mt-0.5">
                     {member.email} · {member.graduation_year ? `Class of ${member.graduation_year}` : 'No year'} · {member.major || 'No major'}
                     {member.company && ` · ${member.company}`}
+                  </div>
+                  <div className="text-xs mt-0.5">
+                    {duesCurrent ? (
+                      <span className="text-green-700 font-medium">
+                        Dues {duesYearLabel(member.dues_year_paid)} · benefits through {paidThrough(member.dues_year_paid)}
+                      </span>
+                    ) : member.dues_year_paid ? (
+                      <span className="text-amber-700 font-medium">
+                        Dues lapsed · last paid {duesYearLabel(member.dues_year_paid)}
+                      </span>
+                    ) : (
+                      <span className="text-charcoal-light">No dues recorded</span>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-2 shrink-0 flex-wrap">
@@ -837,7 +902,6 @@ ${next.description}`)) return
                     className="px-2 py-1.5 text-xs font-semibold rounded-lg border border-charcoal/15 bg-white text-charcoal cursor-pointer focus:outline-none focus:ring-2 focus:ring-burnt-orange/30"
                   >
                     <option value="general">General</option>
-                    <option value="full">Full</option>
                     <option value="executive">Executive</option>
                   </select>
                   <select

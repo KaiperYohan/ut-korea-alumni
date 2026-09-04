@@ -12,19 +12,24 @@ export async function GET() {
   // The status column arrives via /api/init-db. Until that has been run the
   // select would fail and take the whole Members tab down, so fall back to the
   // pre-status shape and let normalizeStatus derive it from is_approved.
+  // dues_year_paid drives the Full badge in the admin list. It is the same value
+  // the entitlement check reads, so the badge cannot disagree with actual access.
   let rows
   try {
     ({ rows } = await sql`
-      SELECT id, email, name, name_ko, graduation_year, major, location, company, title,
-             is_admin, is_approved, status, membership_level, created_at, last_login
-      FROM members
-      ORDER BY created_at DESC
+      SELECT m.id, m.email, m.name, m.name_ko, m.graduation_year, m.major, m.location,
+             m.company, m.title, m.is_admin, m.is_approved, m.status, m.membership_level,
+             m.created_at, m.last_login,
+             (SELECT MAX(d.dues_year) FROM dues_payments d WHERE d.member_id = m.id) AS dues_year_paid
+      FROM members m
+      ORDER BY m.created_at DESC
     `)
   } catch (error) {
-    console.error('Members query failed, retrying without status:', error.message)
+    console.error('Members query failed, retrying without status/dues:', error.message)
     ;({ rows } = await sql`
       SELECT id, email, name, name_ko, graduation_year, major, location, company, title,
-             is_admin, is_approved, NULL AS status, membership_level, created_at, last_login
+             is_admin, is_approved, NULL AS status, membership_level, created_at, last_login,
+             NULL AS dues_year_paid
       FROM members
       ORDER BY created_at DESC
     `)
@@ -42,7 +47,9 @@ export async function PUT(request) {
   const { id, action, level, status } = await request.json()
 
   if (action === 'set_level') {
-    const validLevels = ['general', 'full', 'executive']
+    // 'full' is no longer a level — full-member benefits are derived from the dues
+    // ledger, so setting it here would write a value nothing reads.
+    const validLevels = ['general', 'executive']
     if (!validLevels.includes(level)) {
       return Response.json({ error: 'Invalid membership level' }, { status: 400 })
     }
