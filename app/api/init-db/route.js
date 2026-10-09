@@ -258,8 +258,12 @@ export async function GET(request) {
         AND EXISTS (SELECT 1 FROM dues_payments d WHERE d.member_id = members.id)
     `
 
-    // Auto-verify existing approved members
-    await sql`UPDATE members SET email_verified = true WHERE is_approved = true AND email_verified = false`
+    // There used to be a blanket "UPDATE members SET email_verified = true WHERE
+    // is_approved = true" here, a one-off for accounts created before email
+    // verification existed. Because signup also set is_approved = true, every run
+    // of this route then verified every signup that had never clicked its link —
+    // including addresses that cannot receive mail (naver.con, uexas.edu). The
+    // only way to become verified is now the link itself.
 
     // Add columns to events (idempotent)
     await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS external_url TEXT`

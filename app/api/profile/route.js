@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { sql } from '@/lib/db'
+import { validateBirthday } from '@/lib/birthday'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -55,6 +56,13 @@ export async function PUT(request) {
     return Response.json({ error: 'Name is required' }, { status: 400 })
   }
 
+  // Same rule as signup, so an invalid date already on file has to be corrected
+  // the next time the member saves their profile rather than surviving forever.
+  const birthdayCheck = validateBirthday(birthday)
+  if (!birthdayCheck.ok) {
+    return Response.json({ error: birthdayCheck.error }, { status: 400 })
+  }
+
   await sql`
     UPDATE members SET
       name = ${name.trim()},
@@ -65,7 +73,7 @@ export async function PUT(request) {
       company = ${company?.trim() || null},
       title = ${title?.trim() || null},
       bio = ${bio?.trim() || null},
-      birthday = ${birthday?.trim() || null},
+      birthday = ${birthdayCheck.value},
       phone = ${phone?.trim() || null},
       linkedin = ${linkedin?.trim() || null},
       instagram = ${instagram?.trim() || null},

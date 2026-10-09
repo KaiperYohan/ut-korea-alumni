@@ -53,7 +53,7 @@ export async function POST(request) {
     }
 
     const { rows } = await sql`
-      SELECT id, name, email, email_verified FROM members WHERE email = ${email}
+      SELECT id, name, email, email_verified FROM members WHERE lower(email) = ${String(email).trim().toLowerCase()}
     `
 
     if (!rows.length) {

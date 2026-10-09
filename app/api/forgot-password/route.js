@@ -10,7 +10,7 @@ export async function POST(request) {
     }
 
     const { rows } = await sql`
-      SELECT id, name, email FROM members WHERE email = ${email.toLowerCase().trim()}
+      SELECT id, name, email FROM members WHERE lower(email) = ${String(email).trim().toLowerCase()}
     `
 
     // Always return success to prevent email enumeration
