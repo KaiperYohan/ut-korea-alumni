@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useT, useLanguage } from '../components/LanguageProvider'
+import BirthdayArt from '../components/BirthdayArt'
 
 const CATEGORIES = ['utaka_news', 'members_news', 'sxsk', 'pr']
 const SUBCATEGORIES = ['marriage', 'birth', 'death', 'promotion', 'job_change', 'seeking_employment', 'birthday', 'interview']
@@ -123,6 +124,13 @@ export default function NewsPage() {
                   <div className="shrink-0 w-full md:w-56 h-40 md:h-auto bg-gradient-to-br from-cream to-cream-light relative overflow-hidden">
                     {article.image_url ? (
                       <img src={article.image_url} alt={article.title} className="absolute inset-0 w-full h-full object-cover" />
+                    ) : article.subcategory === 'birthday' ? (
+                      <BirthdayArt
+                        name={locale === 'ko' ? (article.author_name_ko || article.author_name) : article.author_name}
+                        year={article.author_graduation_year}
+                        photoUrl={article.author_profile_image_url}
+                        locale={locale}
+                      />
                     ) : (
                       <div className="absolute inset-0 diagonal-accent" />
                     )}

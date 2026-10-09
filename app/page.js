@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useT, useLanguage } from './components/LanguageProvider'
+import BirthdayArt from './components/BirthdayArt'
 
 export default function Home() {
   const t = useT()
@@ -43,7 +44,20 @@ export default function Home() {
       setUpcomingEvents(upcoming)
     }).catch(() => {})
     fetch('/api/news?category=all').then(r => r.json()).then(d => {
-      setLatestNews((d.articles || []).slice(0, 3))
+      // Birthday posts are generated daily and outnumber real news, so on busy
+      // days they filled every homepage slot. Show the newest one at most and
+      // fill the rest with other news, still newest first.
+      const picked = []
+      let birthdays = 0
+      for (const article of d.articles || []) {
+        if (article.subcategory === 'birthday') {
+          if (birthdays >= 1) continue
+          birthdays++
+        }
+        picked.push(article)
+        if (picked.length === 3) break
+      }
+      setLatestNews(picked)
     }).catch(() => {})
   }, [])
 
@@ -223,6 +237,13 @@ export default function Home() {
                   <div className="h-44 bg-gradient-to-br from-cream to-cream-light relative overflow-hidden">
                     {article.image_url ? (
                       <img src={article.image_url} alt={title} className="absolute inset-0 w-full h-full object-cover" />
+                    ) : article.subcategory === 'birthday' ? (
+                      <BirthdayArt
+                        name={locale === 'ko' ? (article.author_name_ko || article.author_name) : article.author_name}
+                        year={article.author_graduation_year}
+                        photoUrl={article.author_profile_image_url}
+                        locale={locale}
+                      />
                     ) : (
                       <div className="absolute inset-0 diagonal-accent" />
                     )}

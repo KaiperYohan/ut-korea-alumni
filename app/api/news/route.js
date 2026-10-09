@@ -12,7 +12,8 @@ export async function GET(request) {
   let result
   if (subcategory) {
     result = await sql`
-      SELECT n.*, m.name as author_name
+      SELECT n.*, m.name as author_name, m.name_ko as author_name_ko,
+             m.graduation_year as author_graduation_year, m.profile_image_url as author_profile_image_url
       FROM news n
       LEFT JOIN members m ON n.author_id = m.id
       WHERE n.published = true AND n.approval_status = 'approved'
@@ -21,7 +22,8 @@ export async function GET(request) {
     `
   } else if (category === 'all') {
     result = await sql`
-      SELECT n.*, m.name as author_name
+      SELECT n.*, m.name as author_name, m.name_ko as author_name_ko,
+             m.graduation_year as author_graduation_year, m.profile_image_url as author_profile_image_url
       FROM news n
       LEFT JOIN members m ON n.author_id = m.id
       WHERE n.published = true AND n.approval_status = 'approved'
@@ -29,7 +31,8 @@ export async function GET(request) {
     `
   } else {
     result = await sql`
-      SELECT n.*, m.name as author_name
+      SELECT n.*, m.name as author_name, m.name_ko as author_name_ko,
+             m.graduation_year as author_graduation_year, m.profile_image_url as author_profile_image_url
       FROM news n
       LEFT JOIN members m ON n.author_id = m.id
       WHERE n.published = true AND n.approval_status = 'approved'
@@ -38,7 +41,16 @@ export async function GET(request) {
     `
   }
 
-  return Response.json({ articles: result.rows })
+  // The author's profile photo illustrates birthday posts, where the author is the
+  // birthday member. Those photos were shared in the members-only directory, and
+  // this endpoint is public, so they only go to signed-in viewers; everyone else
+  // gets the illustrated birthday card instead.
+  const session = await getServerSession(authOptions)
+  const articles = session
+    ? result.rows
+    : result.rows.map(({ author_profile_image_url, ...rest }) => rest)
+
+  return Response.json({ articles })
 }
 
 export async function POST(request) {
