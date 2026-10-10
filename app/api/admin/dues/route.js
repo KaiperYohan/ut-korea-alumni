@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { currentDuesYear, requiredDuesYear, resolveDuesAmount, resolveDuesTier } from '@/lib/dues'
 import { readDuesRates, memberDuesProfile } from '@/lib/duesRecord'
 import { isActiveMember } from '@/lib/memberStatus'
+import { COMMITTEE_KEYS } from '@/lib/committees'
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions)
@@ -31,7 +32,8 @@ export async function GET(request) {
              p.last_paid_at,
              p.payments,
              (SELECT array_agg(DISTINCT o.role) FROM org_positions o
-               WHERE o.member_id = m.id AND o.role IS NOT NULL) AS roles,
+               WHERE o.member_id = m.id AND o.role IS NOT NULL
+                 AND o.committee = ANY(${COMMITTEE_KEYS})) AS roles,
              (SELECT MAX(dues_year) FROM dues_payments d2 WHERE d2.member_id = m.id) AS latest_dues_year
       FROM members m
       LEFT JOIN (

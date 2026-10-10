@@ -540,6 +540,9 @@ ${next.description}`)) return
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ settings: siteSettings }),
     })
+    // Dues rates live in these settings, and the Dues tab caches amounts computed
+    // from them. Drop that copy so the next visit shows the rates just saved.
+    setDues(null)
     setSettingsSaving(false)
   }
 
@@ -583,7 +586,10 @@ ${next.description}`)) return
               onClick={() => {
                 setActiveTab(tab.id)
                 if (tab.id === 'analytics' && !analytics && !analyticsLoading) fetchAnalytics()
-                if (tab.id === 'dues' && !dues && !duesLoading) fetchDues()
+                // Reload on every visit, not just the first: rates edited in Settings,
+                // or payments recorded elsewhere, would otherwise stay stale until a
+                // full page refresh.
+                if (tab.id === 'dues' && !duesLoading) fetchDues()
               }}
               className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer bg-transparent border-t-0 border-x-0 ${
                 activeTab === tab.id
