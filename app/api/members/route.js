@@ -1,7 +1,7 @@
 import { sql } from '@/lib/db'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { canAccessDirectory } from '@/lib/permissions'
+import { canAccessDirectory, memberTier } from '@/lib/permissions'
 import { memberEntitlement } from '@/lib/duesRecord'
 
 export async function GET(request) {
@@ -26,7 +26,8 @@ export async function GET(request) {
     const searchLike = `%${search}%`
     query = await sql`
       SELECT id, name, name_ko, graduation_year, major, location, company, title, bio, phone,
-             linkedin, instagram, tiktok, youtube, twitter, interests, profile_image_url, membership_level
+             linkedin, instagram, tiktok, youtube, twitter, interests, profile_image_url, membership_level,
+             (SELECT MAX(d.dues_year) FROM dues_payments d WHERE d.member_id = members.id) AS dues_year_paid
       FROM members
       WHERE is_approved = true
         AND (${!search} OR name ILIKE ${searchLike} OR name_ko ILIKE ${searchLike} OR major ILIKE ${searchLike} OR company ILIKE ${searchLike})
@@ -37,12 +38,20 @@ export async function GET(request) {
   } else {
     query = await sql`
       SELECT id, name, name_ko, graduation_year, major, location, company, title, bio, phone,
-             linkedin, instagram, tiktok, youtube, twitter, interests, profile_image_url, membership_level
+             linkedin, instagram, tiktok, youtube, twitter, interests, profile_image_url, membership_level,
+             (SELECT MAX(d.dues_year) FROM dues_payments d WHERE d.member_id = members.id) AS dues_year_paid
       FROM members
       WHERE is_approved = true
       ORDER BY graduation_year DESC NULLS LAST, name ASC
     `
   }
 
-  return Response.json({ members: query.rows })
+  // member_tier carries the badge; the raw dues year is dropped so members do not
+  // see which year everyone else paid for.
+  const members = query.rows.map(({ dues_year_paid, ...m }) => ({
+    ...m,
+    member_tier: memberTier({ membershipLevel: m.membership_level, duesYearPaid: dues_year_paid }),
+  }))
+
+  return Response.json({ members })
 }

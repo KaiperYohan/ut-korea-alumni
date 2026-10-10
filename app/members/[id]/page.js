@@ -66,7 +66,9 @@ export default function MemberDetailPage() {
     full: { avatar: 'from-burnt-orange to-gold', badge: 'bg-blue-50 text-blue-700 border-blue-200', label: t('membership.full') },
     general: { avatar: 'from-charcoal-light to-charcoal/60', badge: 'bg-gray-100 text-gray-600 border-gray-200', label: t('membership.general') },
   }
-  const level = levelStyles[member.membership_level] || levelStyles.general
+  // member_tier is derived from dues on the server; membership_level alone now
+  // reads "general" for every paid member who is not an executive.
+  const level = levelStyles[member.member_tier] || levelStyles.general
 
   const displayName = locale === 'ko' && member.name_ko ? member.name_ko : member.name
   const altName = locale === 'ko' && member.name_ko ? member.name : member.name_ko

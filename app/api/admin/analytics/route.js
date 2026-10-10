@@ -1,6 +1,7 @@
 import { sql } from '@/lib/db'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { requiredDuesYear } from '@/lib/dues'
 
 async function safeQuery(name, queryFn) {
   try {
@@ -65,14 +66,28 @@ export async function GET() {
       LIMIT 10
     `)
 
+    // Grouped by the tier members actually hold, not the raw membership_level
+    // column: since full benefits moved to the dues ledger that column reads
+    // 'general' for every paid member, so grouping on it made the Full row vanish.
+    // Mirrors lib/permissions memberTier — executive, else dues current, else general.
+    const requiredYear = requiredDuesYear()
     const membershipLevels = await safeQuery('membershipLevels', () => sql`
-      SELECT membership_level AS level,
+      SELECT tier AS level,
              COUNT(*) AS total,
              SUM(CASE WHEN is_approved = true THEN 1 ELSE 0 END) AS approved,
              SUM(CASE WHEN is_approved = false AND COALESCE(status, 'pending') = 'pending' THEN 1 ELSE 0 END) AS pending,
              SUM(CASE WHEN is_approved = false AND COALESCE(status, 'pending') <> 'pending' THEN 1 ELSE 0 END) AS inactive
-      FROM members
-      GROUP BY membership_level
+      FROM (
+        SELECT m.*,
+               CASE
+                 WHEN m.membership_level = 'executive' THEN 'executive'
+                 WHEN (SELECT MAX(d.dues_year) FROM dues_payments d WHERE d.member_id = m.id) >= ${requiredYear} THEN 'full'
+                 ELSE 'general'
+               END AS tier
+        FROM members m
+      ) t
+      GROUP BY tier
+      ORDER BY CASE tier WHEN 'executive' THEN 0 WHEN 'full' THEN 1 ELSE 2 END
     `)
 
     const eventAttendance = await safeQuery('eventAttendance', () => sql`
