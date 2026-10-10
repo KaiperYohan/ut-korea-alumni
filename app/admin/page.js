@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useT } from '../components/LanguageProvider'
 import { COMMITTEES, buildOrgSlots } from '@/lib/committees'
+import MemberPicker, { sortMembers, matchesMember } from '../components/MemberPicker'
 import { MEMBER_STATUSES, statusMeta } from '@/lib/memberStatus'
 import { currentDuesYear, duesYearLabel, duesDeadline, duesLapseDate, selectableDuesYears, isDuesCurrent, paidThrough, formatKrw, duesRateSettingKey, DUES_RATE_TIERS, DUES_AMOUNT_KRW } from '@/lib/dues'
 
@@ -26,6 +27,11 @@ export default function AdminPage() {
   const [pastPresidentsSaving, setPastPresidentsSaving] = useState(false)
   const [teams, setTeams] = useState([])
   const [teamSavingId, setTeamSavingId] = useState(null)
+  // Per-team search text for the team member checklist, keyed by team id.
+  const [teamMemberQuery, setTeamMemberQuery] = useState({})
+  // Members offered by every member picker. Memoized so the ~40 org chart pickers
+  // share one list instead of re-filtering on every render.
+  const approvedMemberList = useMemo(() => members.filter(m => m.is_approved), [members])
   const [newTeamName, setNewTeamName] = useState('')
   const [memberSearch, setMemberSearch] = useState('')
   const [siteSettings, setSiteSettings] = useState({ stat_members: '150+', stat_events: '50+', stat_years: '15+', notice: '', notice_ko: '', greeting_president: '', greeting_president_ko: '' })
@@ -1791,19 +1797,14 @@ ${next.description}`)) return
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                               {slots.map((value, i) => (
                                 <div key={i} className="flex items-center gap-2">
-                                  <select
+                                  <MemberPicker
+                                    members={approvedMemberList}
                                     value={value}
-                                    onChange={(e) => setSlotMember(committee.key, roleInfo.role, i, e.target.value)}
+                                    onChange={(id) => setSlotMember(committee.key, roleInfo.role, i, id)}
                                     className={inputClass}
-                                    aria-label={`${committee.en} — ${roleInfo.en} ${i + 1}`}
-                                  >
-                                    <option value="">— Empty —</option>
-                                    {members.filter(m => m.is_approved).map(m => (
-                                      <option key={m.id} value={m.id}>
-                                        {m.name}{m.name_ko ? ` (${m.name_ko})` : ''} — {m.graduation_year || '?'}
-                                      </option>
-                                    ))}
-                                  </select>
+                                    emptyLabel="— Empty —"
+                                    ariaLabel={`${committee.en} — ${roleInfo.en} ${i + 1}`}
+                                  />
                                   <button
                                     type="button"
                                     onClick={() => removeSlot(committee.key, roleInfo.role, i)}
@@ -1843,18 +1844,14 @@ ${next.description}`)) return
                   <div key={pp.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end border border-charcoal/10 rounded-xl p-4">
                     <div className="md:col-span-6">
                       <label className="block text-xs font-medium text-charcoal-light mb-1">Member</label>
-                      <select
+                      <MemberPicker
+                        members={approvedMemberList}
                         value={pp.member_id || ''}
-                        onChange={(e) => updatePastPresident(idx, 'member_id', e.target.value)}
+                        onChange={(id) => updatePastPresident(idx, 'member_id', id)}
                         className={inputClass}
-                      >
-                        <option value="">— Select member —</option>
-                        {members.filter(m => m.is_approved).map(m => (
-                          <option key={m.id} value={m.id}>
-                            {m.name}{m.name_ko ? ` (${m.name_ko})` : ''} — {m.graduation_year || '?'}
-                          </option>
-                        ))}
-                      </select>
+                        emptyLabel="— Select member —"
+                        ariaLabel={`Past president ${idx + 1}`}
+                      />
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-xs font-medium text-charcoal-light mb-1">Term start</label>
@@ -1966,37 +1963,57 @@ ${next.description}`)) return
 
                       <div className="mb-4">
                         <label className="block text-xs font-medium text-charcoal-light mb-1">{team.leader_label_en || 'Leader'}</label>
-                        <select
+                        <MemberPicker
+                          members={approvedMembers}
                           value={team.leader_member_id || ''}
-                          onChange={(e) => updateTeam(team.id, 'leader_member_id', e.target.value || null)}
+                          onChange={(id) => updateTeam(team.id, 'leader_member_id', id || null)}
                           className={inputClass}
-                        >
-                          <option value="">— None —</option>
-                          {approvedMembers.map(m => (
-                            <option key={m.id} value={m.id}>
-                              {m.name}{m.name_ko ? ` (${m.name_ko})` : ''} — {m.graduation_year || '?'}
-                            </option>
-                          ))}
-                        </select>
+                          emptyLabel="— None —"
+                          ariaLabel={`${team.name_en || 'Team'} leader`}
+                        />
                       </div>
 
                       <div className="mb-4">
                         <label className="block text-xs font-medium text-charcoal-light mb-2">Members ({(team.member_ids || []).length} selected)</label>
-                        <div className="max-h-48 overflow-y-auto border border-charcoal/10 rounded-lg p-3 space-y-1">
-                          {approvedMembers.map(m => {
-                            const checked = (team.member_ids || []).includes(m.id)
-                            return (
-                              <label key={m.id} className="flex items-center gap-2 text-sm text-charcoal cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={(e) => toggleTeamMember(team.id, m.id, e.target.checked)}
-                                />
-                                {m.name}{m.name_ko ? ` (${m.name_ko})` : ''} — {m.graduation_year || '?'}
-                              </label>
-                            )
-                          })}
-                        </div>
+                        {(() => {
+                          const query = teamMemberQuery[team.id] || ''
+                          const chosen = new Set(team.member_ids || [])
+                          // A–Z, with members already on the team pinned first so the
+                          // current roster stays visible while searching for more.
+                          const ordered = sortMembers(approvedMembers)
+                            .sort((a, b) => (chosen.has(b.id) ? 1 : 0) - (chosen.has(a.id) ? 1 : 0))
+                          const shown = ordered.filter(m => chosen.has(m.id) || matchesMember(m, query))
+                          return (
+                            <>
+                              <input
+                                type="text"
+                                value={query}
+                                onChange={(e) => setTeamMemberQuery(prev => ({ ...prev, [team.id]: e.target.value }))}
+                                placeholder="Search name, 한글 이름, email or year…"
+                                className={`${inputClass} mb-2`}
+                                aria-label={`Search members for ${team.name_en || 'team'}`}
+                              />
+                              <div className="max-h-48 overflow-y-auto border border-charcoal/10 rounded-lg p-3 space-y-1">
+                                {shown.map(m => {
+                                  const checked = chosen.has(m.id)
+                                  return (
+                                    <label key={m.id} className={`flex items-center gap-2 text-sm cursor-pointer ${checked ? 'text-charcoal font-medium' : 'text-charcoal'}`}>
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={(e) => toggleTeamMember(team.id, m.id, e.target.checked)}
+                                      />
+                                      {m.name}{m.name_ko ? ` (${m.name_ko})` : ''} — {m.graduation_year || '?'}
+                                    </label>
+                                  )
+                                })}
+                                {query && shown.length === chosen.size && (
+                                  <p className="text-xs text-charcoal-light">No other members match “{query}”.</p>
+                                )}
+                              </div>
+                            </>
+                          )
+                        })()}
                       </div>
 
                       <div className="flex gap-3">
