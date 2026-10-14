@@ -6,6 +6,20 @@ import { useSession } from 'next-auth/react'
 import { useT, useLanguage } from './components/LanguageProvider'
 import BirthdayArt from './components/BirthdayArt'
 
+// Hero slides. Each has WebP copies in /public/hero at several widths so a phone
+// downloads a ~100 KB file instead of the 2560px JPEG (~900 KB); `src` stays the
+// JPEG as a fallback. Regenerate the WebP set whenever a slide image changes.
+const HERO_IMAGES = [
+  { src: '/grand reunion.jpg', slug: 'grand-reunion', widths: [640, 1080, 1600, 2560] },
+  { src: '/home2.jpg', slug: 'golf', widths: [640, 1080, 1600, 2560] },
+  { src: '/home3.jpeg', slug: 'running', widths: [640, 1080, 1600, 2560] },
+  { src: '/home4.jpg', slug: 'holdem', widths: [640, 1080, 1600, 2560] },
+  { src: '/home 5.jpg', slug: 'home5', widths: [640, 1080, 1280] },
+]
+// The hero fills the viewport width; the browser multiplies by pixel density.
+const HERO_SIZES = '100vw'
+const heroSrcSet = (slide) => slide.widths.map(w => `/hero/${slide.slug}-${w}.webp ${w}w`).join(', ')
+
 export default function Home() {
   const t = useT()
   const { locale } = useLanguage()
@@ -13,12 +27,24 @@ export default function Home() {
   const [stats, setStats] = useState({ stat_members: '150+', stat_events: '50+', stat_years: '15+' })
   const [upcomingEvents, setUpcomingEvents] = useState([])
   const [latestNews, setLatestNews] = useState([])
-  const heroImages = ['/grand reunion.jpg', '/home2.jpg', '/home3.jpeg', '/home4.jpg', '/home 5.jpg']
+  const heroImages = HERO_IMAGES
   const [heroIdx, setHeroIdx] = useState(0)
   const [prevIdx, setPrevIdx] = useState(0)
 
+  // Warm only the slide after the one on screen, so it is ready when the
+  // slideshow advances. Preloading all five on mount (~3 MB) made the first slide
+  // compete with four images nobody was looking at yet, which on a phone pushed
+  // the hero past five seconds. srcset/sizes let the browser pick the same
+  // width it will use for the real <img>, so this warms the right file.
   useEffect(() => {
-    heroImages.forEach(src => { const img = new Image(); img.src = src })
+    const next = heroImages[(heroIdx + 1) % heroImages.length]
+    const img = new Image()
+    img.sizes = HERO_SIZES
+    img.srcset = heroSrcSet(next)
+    img.src = next.src
+  }, [heroIdx])
+
+  useEffect(() => {
     const timer = setInterval(() => {
       setHeroIdx(prev => {
         setPrevIdx(prev)
@@ -38,12 +64,15 @@ export default function Home() {
         }))
       }
     }).catch(() => {})
-    fetch('/api/events').then(r => r.json()).then(d => {
+    // Only the next three upcoming events — the homepage shows no more.
+    fetch('/api/events?upcoming=3').then(r => r.json()).then(d => {
       const now = new Date()
       const upcoming = (d.events || []).filter(e => new Date(e.event_date) >= now).sort((a, b) => new Date(a.event_date) - new Date(b.event_date)).slice(0, 3)
       setUpcomingEvents(upcoming)
     }).catch(() => {})
-    fetch('/api/news?category=all').then(r => r.json()).then(d => {
+    // The server picks the three cards (at most one birthday); fetching every
+    // article to choose three here cost ~290 KB on each homepage visit.
+    fetch('/api/news?homepage=1').then(r => r.json()).then(d => {
       // Birthday posts are generated daily and outnumber real news, so on busy
       // days they filled every homepage slot. Show the newest one at most and
       // fill the rest with other news, still newest first.
@@ -68,9 +97,24 @@ export default function Home() {
         {/* Background — rotating images */}
         <div className="absolute inset-0">
           {/* Previous image (behind) */}
-          <img src={heroImages[prevIdx]} alt="" className="absolute inset-0 w-full h-full object-cover" />
-          {/* Current image (fades in on top) */}
-          <img key={heroIdx} src={heroImages[heroIdx]} alt="" className="absolute inset-0 w-full h-full object-cover animate-fade-in" />
+          <img
+            src={heroImages[prevIdx].src}
+            srcSet={heroSrcSet(heroImages[prevIdx])}
+            sizes={HERO_SIZES}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Current image (fades in on top). The first slide is the largest thing
+              on the page, so it is fetched at high priority. */}
+          <img
+            key={heroIdx}
+            src={heroImages[heroIdx].src}
+            srcSet={heroSrcSet(heroImages[heroIdx])}
+            sizes={HERO_SIZES}
+            fetchPriority={heroIdx === 0 ? 'high' : 'auto'}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover animate-fade-in"
+          />
           <div className="absolute inset-0 bg-charcoal/70" />
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-transparent to-charcoal/40" />
@@ -236,7 +280,7 @@ export default function Home() {
                 <CardTag key={article.id} {...linkProps} className="card overflow-hidden group cursor-pointer no-underline">
                   <div className="h-44 bg-gradient-to-br from-cream to-cream-light relative overflow-hidden">
                     {article.image_url ? (
-                      <img src={article.image_url} alt={title} className="absolute inset-0 w-full h-full object-cover" />
+                      <img src={article.image_url} alt={title} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
                     ) : article.subcategory === 'birthday' ? (
                       <BirthdayArt
                         name={locale === 'ko' ? (article.author_name_ko || article.author_name) : article.author_name}

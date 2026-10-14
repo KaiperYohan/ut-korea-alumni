@@ -10,7 +10,29 @@ export async function GET(request) {
   const subcategory = searchParams.get('subcategory') || ''
 
   let result
-  if (subcategory) {
+  if (searchParams.get('homepage') === '1') {
+    // The homepage shows three cards with at most one birthday post among them.
+    // It used to download every published article (~290 KB, 214 rows, full
+    // text) and pick three in the browser; this does the same selection here and
+    // returns just those three. The newest birthday plus the newest three other
+    // posts always contain the answer, so two small LIMIT queries suffice.
+    const { rows: picked } = await sql`
+      (SELECT n.*, m.name as author_name, m.name_ko as author_name_ko,
+              m.graduation_year as author_graduation_year, m.profile_image_url as author_profile_image_url
+       FROM news n LEFT JOIN members m ON n.author_id = m.id
+       WHERE n.published = true AND n.approval_status = 'approved' AND n.subcategory = 'birthday'
+       ORDER BY n.created_at DESC, n.id DESC LIMIT 1)
+      UNION ALL
+      (SELECT n.*, m.name as author_name, m.name_ko as author_name_ko,
+              m.graduation_year as author_graduation_year, m.profile_image_url as author_profile_image_url
+       FROM news n LEFT JOIN members m ON n.author_id = m.id
+       WHERE n.published = true AND n.approval_status = 'approved' AND n.subcategory IS DISTINCT FROM 'birthday'
+       ORDER BY n.created_at DESC, n.id DESC LIMIT 3)
+      ORDER BY created_at DESC, id DESC
+      LIMIT 3
+    `
+    result = { rows: picked }
+  } else if (subcategory) {
     result = await sql`
       SELECT n.*, m.name as author_name, m.name_ko as author_name_ko,
              m.graduation_year as author_graduation_year, m.profile_image_url as author_profile_image_url
@@ -18,7 +40,7 @@ export async function GET(request) {
       LEFT JOIN members m ON n.author_id = m.id
       WHERE n.published = true AND n.approval_status = 'approved'
         AND n.category = ${category} AND n.subcategory = ${subcategory}
-      ORDER BY n.created_at DESC
+      ORDER BY n.created_at DESC, n.id DESC
     `
   } else if (category === 'all') {
     result = await sql`
@@ -27,7 +49,7 @@ export async function GET(request) {
       FROM news n
       LEFT JOIN members m ON n.author_id = m.id
       WHERE n.published = true AND n.approval_status = 'approved'
-      ORDER BY n.created_at DESC
+      ORDER BY n.created_at DESC, n.id DESC
     `
   } else {
     result = await sql`
@@ -37,7 +59,7 @@ export async function GET(request) {
       LEFT JOIN members m ON n.author_id = m.id
       WHERE n.published = true AND n.approval_status = 'approved'
         AND n.category = ${category}
-      ORDER BY n.created_at DESC
+      ORDER BY n.created_at DESC, n.id DESC
     `
   }
 

@@ -3,7 +3,30 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { canCreateEvent } from '@/lib/permissions'
 
-export async function GET() {
+export async function GET(request) {
+  // ?upcoming=N returns only the next N upcoming events, soonest first — what the
+  // homepage shows. Without it, every event is returned, as the events page and
+  // admin expect.
+  //
+  // event_date is TEXT holding the admin form's datetime-local value
+  // ("2026-10-25T19:00"), Korean wall-clock time with no zone. So it is compared
+  // as text against the current time in Seoul rendered in the same fixed-width
+  // format, which orders correctly and cannot fail on a cast the way comparing it
+  // to NOW() directly would.
+  const upcoming = parseInt(new URL(request.url).searchParams.get('upcoming') || '', 10)
+  if (Number.isInteger(upcoming) && upcoming > 0) {
+    const { rows: events } = await sql`
+      SELECT e.*, m.name as creator_name,
+        COALESCE(e.attendee_override, (SELECT COUNT(*) FROM event_rsvps WHERE event_id = e.id AND status = 'attending')::int) as attendee_count
+      FROM events e
+      LEFT JOIN members m ON e.created_by = m.id
+      WHERE e.event_date >= to_char(NOW() AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD"T"HH24:MI')
+      ORDER BY e.event_date ASC
+      LIMIT ${Math.min(upcoming, 20)}
+    `
+    return Response.json({ events })
+  }
+
   const { rows: events } = await sql`
     SELECT e.*, m.name as creator_name,
       COALESCE(e.attendee_override, (SELECT COUNT(*) FROM event_rsvps WHERE event_id = e.id AND status = 'attending')::int) as attendee_count

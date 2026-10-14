@@ -29,7 +29,7 @@ export default function BirthdayArt({ name, year, photoUrl, locale = 'en' }) {
   if (photoUrl) {
     return (
       <div className="absolute inset-0">
-        <img src={photoUrl} alt={name || ''} className="absolute inset-0 w-full h-full object-cover" />
+        <img src={photoUrl} alt={name || ''} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-burnt-deep/70 via-transparent to-transparent" />
         <span className="absolute top-3 right-3 text-[0.65rem] font-semibold bg-white/90 text-burnt-orange px-2.5 py-1 rounded-full">
           🎂 {heading}
