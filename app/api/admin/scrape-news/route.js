@@ -2,6 +2,7 @@ import { sql, withTransaction } from '@/lib/db'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { parseStringPromise } from 'xml2js'
+import { storeNewsThumbnail, mapLimit } from '@/lib/newsImages'
 
 const SITE_BASE = 'https://www.sxsk.news'
 const SITEMAP_URL = `${SITE_BASE}/sitemap.xml`
@@ -321,7 +322,8 @@ async function importPairs(db, pairs, existingUrls) {
   let skipped = 0
   let updated = 0
 
-  for (const { en, ko } of pairs) {
+  for (const pair of pairs) {
+    const { en, ko } = pair
     const enUrl = en?.url || null
     const koUrl = ko?.url || null
 
@@ -345,13 +347,17 @@ async function importPairs(db, pairs, existingUrls) {
     const titleKo = ko ? ko.title : null
     const content = primary.description
     const contentKo = ko ? ko.description : null
-    const imageUrl = en?.imageUrl || ko?.imageUrl || null
+    const sourceImage = en?.imageUrl || ko?.imageUrl || null
+    // A resized stored copy when one was made (see prepareThumbnails), else the
+    // source. When a copy replaced it, the source is kept in image_original_url.
+    const imageUrl = pair.thumbnail || sourceImage
+    const imageOriginalUrl = pair.thumbnail ? sourceImage : null
     const pubDate = en?.pubDate || ko?.pubDate || new Date().toISOString()
     const { category, subcategory } = categorize(primary.title)
 
     await db`
-      INSERT INTO news (title, title_ko, content, content_ko, external_url, external_url_ko, image_url, category, subcategory, approval_status, published, created_at, updated_at)
-      VALUES (${title}, ${titleKo}, ${content}, ${contentKo}, ${enUrl}, ${koUrl}, ${imageUrl}, ${category}, ${subcategory}, 'approved', true, ${pubDate}, NOW())
+      INSERT INTO news (title, title_ko, content, content_ko, external_url, external_url_ko, image_url, image_original_url, category, subcategory, approval_status, published, created_at, updated_at)
+      VALUES (${title}, ${titleKo}, ${content}, ${contentKo}, ${enUrl}, ${koUrl}, ${imageUrl}, ${imageOriginalUrl}, ${category}, ${subcategory}, 'approved', true, ${pubDate}, NOW())
     `
     if (enUrl) existingUrls.add(enUrl)
     if (koUrl) existingUrls.add(koUrl)
@@ -389,6 +395,22 @@ export async function POST(request) {
 
     const pairs = matchArticles(enItems, koItems)
 
+    // Make small stored thumbnails for the articles about to be inserted — all of
+    // them on a replace, only new ones otherwise. Done before the transaction so
+    // the downloads never hold it open. Copies already stored from an earlier sync
+    // are found and reused rather than made again.
+    const known = replace ? new Set() : await readExistingUrls(sql)
+    const incoming = pairs.filter(({ en, ko }) =>
+      !((en?.url && known.has(en.url)) || (ko?.url && known.has(ko.url))))
+    const thumbs = await mapLimit(incoming, 4, async (pair) => {
+      const source = pair.en?.imageUrl || pair.ko?.imageUrl
+      if (!source) return false
+      const result = await storeNewsThumbnail(source)
+      if (result.converted) pair.thumbnail = result.url
+      return result.converted
+    })
+    const thumbnailed = thumbs.filter(Boolean).length
+
     let deleted = 0
     let counts
 
@@ -421,6 +443,7 @@ export async function POST(request) {
       skipped: counts.skipped,
       total: pairs.length,
       unpaired: pairs.filter(p => !p.en || !p.ko).length,
+      thumbnailed,
       fetched: { en: enItems.length, ko: koItems.length },
       warning,
       pairs: pairDebug,

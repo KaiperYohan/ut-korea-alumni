@@ -302,6 +302,9 @@ export async function GET(request) {
     await sql`ALTER TABLE news ADD COLUMN IF NOT EXISTS external_url TEXT`
     await sql`ALTER TABLE news ADD COLUMN IF NOT EXISTS external_url_ko TEXT`
     await sql`ALTER TABLE news ADD COLUMN IF NOT EXISTS view_count INTEGER DEFAULT 0`
+    // Where a news thumbnail came from before it was resized into Blob storage, so
+    // the conversion is reversible and a re-sync can tell what each copy is of.
+    await sql`ALTER TABLE news ADD COLUMN IF NOT EXISTS image_original_url TEXT`
 
     // Migrate old 'news' category to 'sxsk'
     await sql`UPDATE news SET category = 'sxsk' WHERE category = 'news'`

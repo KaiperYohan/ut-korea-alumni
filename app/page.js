@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useT, useLanguage } from './components/LanguageProvider'
 import BirthdayArt from './components/BirthdayArt'
+import NewsThumb from './components/NewsThumb'
 
 // Hero slides. Each has WebP copies in /public/hero at several widths so a phone
 // downloads a ~100 KB file instead of the 2560px JPEG (~900 KB); `src` stays the
@@ -280,7 +281,7 @@ export default function Home() {
                 <CardTag key={article.id} {...linkProps} className="card overflow-hidden group cursor-pointer no-underline">
                   <div className="h-44 bg-gradient-to-br from-cream to-cream-light relative overflow-hidden">
                     {article.image_url ? (
-                      <img src={article.image_url} alt={title} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
+                      <NewsThumb src={article.image_url} alt={title} sizes="(min-width: 768px) 400px, 100vw" />
                     ) : article.subcategory === 'birthday' ? (
                       <BirthdayArt
                         name={locale === 'ko' ? (article.author_name_ko || article.author_name) : article.author_name}

@@ -1,6 +1,7 @@
 import { sql } from '@/lib/db'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { storeNewsThumbnail } from '@/lib/newsImages'
 
 export async function POST() {
   const session = await getServerSession(authOptions)
@@ -28,7 +29,10 @@ export async function POST() {
       const ogMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i)
         || html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["']/i)
       if (ogMatch) {
-        await sql`UPDATE news SET image_url = ${ogMatch[1]} WHERE id = ${article.id}`
+        // Stored as a small copy, like synced thumbnails, rather than hotlinking
+        // the full-size og:image.
+        const thumb = await storeNewsThumbnail(ogMatch[1])
+        await sql`UPDATE news SET image_url = ${thumb.url}, image_original_url = ${thumb.converted ? ogMatch[1] : null} WHERE id = ${article.id}`
         updated++
       }
     } catch {}

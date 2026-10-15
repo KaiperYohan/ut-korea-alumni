@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useT, useLanguage } from '../components/LanguageProvider'
 import BirthdayArt from '../components/BirthdayArt'
+import NewsThumb from '../components/NewsThumb'
 
 const CATEGORIES = ['utaka_news', 'members_news', 'sxsk', 'pr']
 const SUBCATEGORIES = ['marriage', 'birth', 'death', 'promotion', 'job_change', 'seeking_employment', 'birthday', 'interview']
@@ -123,7 +124,7 @@ export default function NewsPage() {
                   {/* Image area */}
                   <div className="shrink-0 w-full md:w-56 h-40 md:h-auto bg-gradient-to-br from-cream to-cream-light relative overflow-hidden">
                     {article.image_url ? (
-                      <img src={article.image_url} alt={article.title} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
+                      <NewsThumb src={article.image_url} alt={article.title} sizes="(min-width: 768px) 224px, 100vw" />
                     ) : article.subcategory === 'birthday' ? (
                       <BirthdayArt
                         name={locale === 'ko' ? (article.author_name_ko || article.author_name) : article.author_name}
