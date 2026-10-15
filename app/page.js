@@ -31,6 +31,9 @@ export default function Home() {
   const heroImages = HERO_IMAGES
   const [heroIdx, setHeroIdx] = useState(0)
   const [prevIdx, setPrevIdx] = useState(0)
+  const goTo = (i) => { setPrevIdx(heroIdx); setHeroIdx((i + heroImages.length) % heroImages.length) }
+  const goPrev = () => goTo(heroIdx - 1)
+  const goNext = () => goTo(heroIdx + 1)
 
   // Warm only the slide after the one on screen, so it is ready when the
   // slideshow advances. Preloading all five on mount (~3 MB) made the first slide
@@ -94,7 +97,11 @@ export default function Home() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative min-h-[92vh] flex items-center justify-center overflow-hidden hero-texture">
+      {/* On phones the hero content is taller than a short screen; centred, it spilled
+          under the fixed header and banner at the top and under the stats card
+          (-mt-16) at the bottom. The padding reserves both, so the section grows to
+          fit instead. Desktop has the room and keeps its centring. */}
+      <section className="relative min-h-[92vh] flex items-center justify-center overflow-hidden hero-texture pt-36 pb-28 md:pt-0 md:pb-0">
         {/* Background — rotating images */}
         <div className="absolute inset-0">
           {/* Previous image (behind) */}
@@ -120,11 +127,13 @@ export default function Home() {
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-transparent to-charcoal/40" />
 
-        {/* Hero arrows */}
-        <button onClick={() => { setPrevIdx(heroIdx); setHeroIdx(i => (i - 1 + heroImages.length) % heroImages.length) }} className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/50 transition-all cursor-pointer" aria-label="Previous image">
+        {/* Hero arrows — desktop only. On a phone the vertical middle of the hero is
+            where the subtitle wraps, so these covered it; phones get the control row
+            under the buttons instead. */}
+        <button onClick={goPrev} className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm border border-white/20 items-center justify-center text-white/70 hover:text-white hover:bg-black/50 transition-all cursor-pointer" aria-label="Previous image">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
         </button>
-        <button onClick={() => { setPrevIdx(heroIdx); setHeroIdx(i => (i + 1) % heroImages.length) }} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/50 transition-all cursor-pointer" aria-label="Next image">
+        <button onClick={goNext} className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm border border-white/20 items-center justify-center text-white/70 hover:text-white hover:bg-black/50 transition-all cursor-pointer" aria-label="Next image">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
         </button>
 
@@ -164,6 +173,28 @@ export default function Home() {
             <Link href="/events" className="btn-secondary !border-white/30 !text-white hover:!bg-white/10 hover:!text-white text-base !py-3.5 !px-8 no-underline">
               {t('hero.eventsBtn')}
             </Link>
+          </div>
+
+          {/* Slide controls on phones: in the flow under the buttons, where they
+              cannot cover text. The dots also show which photo is up. */}
+          <div className="md:hidden mt-8 flex items-center justify-center gap-4 opacity-0 animate-fade-in-up animate-delay-300">
+            <button onClick={goPrev} className="w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/80 cursor-pointer" aria-label="Previous image">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <div className="flex items-center gap-2">
+              {heroImages.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => goTo(i)}
+                  aria-label={`Show image ${i + 1}`}
+                  aria-current={i === heroIdx ? 'true' : undefined}
+                  className={`h-1.5 rounded-full transition-all cursor-pointer border-0 p-0 ${i === heroIdx ? 'w-5 bg-white' : 'w-1.5 bg-white/40'}`}
+                />
+              ))}
+            </div>
+            <button onClick={goNext} className="w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/80 cursor-pointer" aria-label="Next image">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
+            </button>
           </div>
         </div>
 
