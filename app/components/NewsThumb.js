@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 
 // Thumbnail for a news card. Fills its parent (which must be positioned).
@@ -21,10 +22,13 @@ function optimizable(src) {
 }
 
 export default function NewsThumb({ src, alt = '', sizes = '(min-width: 768px) 400px, 100vw', className = '' }) {
-  if (!src) return null
+  // A dead link (expired invitation cards, removed posts) renders nothing, so the
+  // card shows its normal placeholder instead of a broken-image icon.
+  const [failed, setFailed] = useState(false)
+  if (!src || failed) return null
   const cls = `absolute inset-0 w-full h-full object-cover ${className}`
   if (optimizable(src)) {
-    return <Image src={src} alt={alt} fill sizes={sizes} className={cls} />
+    return <Image src={src} alt={alt} fill sizes={sizes} className={cls} onError={() => setFailed(true)} />
   }
-  return <img src={src} alt={alt} loading="lazy" decoding="async" className={cls} />
+  return <img src={src} alt={alt} loading="lazy" decoding="async" className={cls} onError={() => setFailed(true)} />
 }

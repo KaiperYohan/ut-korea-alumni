@@ -1,4 +1,5 @@
 import { sql } from '@/lib/db'
+import { resolveImageUrl } from '@/lib/resolveUrl'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { canWritePost } from '@/lib/permissions'
@@ -91,7 +92,9 @@ export async function POST(request) {
       const html = await res.text()
       const ogMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i)
         || html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["']/i)
-      if (ogMatch) imageUrl = ogMatch[1]
+      // Resolved against the page it came from: a relative og:image would
+      // otherwise point at our own domain.
+      if (ogMatch) imageUrl = resolveImageUrl(ogMatch[1], res.url || externalUrl) || imageUrl
     } catch {}
   }
 
