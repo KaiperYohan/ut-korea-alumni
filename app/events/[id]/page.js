@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { useT, useLanguage } from '../../components/LanguageProvider'
 import { linkify } from '@/lib/linkify'
+import EventImage, { ImageLightbox } from '../../components/EventImage'
 
 export default function EventDetailPage({ params }) {
   const { id } = use(params)
@@ -16,6 +17,7 @@ export default function EventDetailPage({ params }) {
   const [myRsvp, setMyRsvp] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeImageIdx, setActiveImageIdx] = useState(0)
+  const [lightboxIdx, setLightboxIdx] = useState(null)
 
   const fetchEvent = async () => {
     const res = await fetch(`/api/events/${id}`)
@@ -77,10 +79,15 @@ export default function EventDetailPage({ params }) {
               try { const p = JSON.parse(event.image_url); images = Array.isArray(p) ? p : [event.image_url] } catch { images = [event.image_url] }
             }
             if (images.length === 0) return null
-            if (images.length === 1) return <img src={images[0]} alt={event.title} className="w-full h-64 md:h-80 object-cover" />
+            const openLabel = locale === 'ko' ? '전체 보기' : 'View full image'
+            const shown = images[activeImageIdx] ? activeImageIdx : 0
+            const lightbox = <ImageLightbox images={images} index={lightboxIdx} onIndex={setLightboxIdx} onClose={() => setLightboxIdx(null)} closeLabel={locale === 'ko' ? '닫기' : 'Close'} />
+            const main = <EventImage src={images[shown]} alt={event.title} className="w-full h-64 md:h-80" onOpen={() => setLightboxIdx(shown)} openLabel={openLabel} />
+            if (images.length === 1) return <>{main}{lightbox}</>
             return (
               <div>
-                <img src={images[activeImageIdx] || images[0]} alt={event.title} className="w-full h-64 md:h-80 object-cover" />
+                {main}
+                {lightbox}
                 <div className="flex gap-1 p-2 bg-charcoal/5 overflow-x-auto">
                   {images.map((url, i) => (
                     <img key={i} src={url} alt={`${event.title} ${i + 1}`} className={`w-20 h-14 object-cover rounded cursor-pointer flex-shrink-0 transition-opacity ${i === activeImageIdx ? 'ring-2 ring-burnt-orange opacity-100' : 'opacity-60 hover:opacity-100'}`} onClick={() => setActiveImageIdx(i)} />

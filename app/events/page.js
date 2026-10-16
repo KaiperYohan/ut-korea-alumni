@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useT, useLanguage } from '../components/LanguageProvider'
+import EventImage from '../components/EventImage'
 
 export default function EventsPage() {
   const t = useT()
@@ -57,7 +58,7 @@ export default function EventsPage() {
                     {/* Image or Date block */}
                     {(() => { try { const p = JSON.parse(event.image_url); return Array.isArray(p) ? p[0] : event.image_url } catch { return event.image_url } })() ? (
                       <div className="shrink-0 w-full md:w-48 h-40 md:h-auto relative">
-                        <img src={(() => { try { const p = JSON.parse(event.image_url); return Array.isArray(p) ? p[0] || '' : event.image_url } catch { return event.image_url } })()} alt={event.title} className="w-full h-full object-cover" />
+                        <EventImage src={(() => { try { const p = JSON.parse(event.image_url); return Array.isArray(p) ? p[0] || '' : event.image_url } catch { return event.image_url } })()} alt={event.title} className="w-full h-full" />
                         <div className="absolute top-2 left-2 bg-burnt-orange text-white text-xs font-bold px-2 py-1 rounded">
                           {getMonth(event.event_date)} {getDay(event.event_date)}
                         </div>
