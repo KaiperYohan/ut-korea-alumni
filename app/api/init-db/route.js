@@ -249,6 +249,23 @@ export async function GET(request) {
     `
     await sql`CREATE INDEX IF NOT EXISTS idx_bank_deposits_status ON bank_deposits (status)`
 
+    // Queue for end-of-year dues notices (see lib/duesNotices): one row per member
+    // per campaign, so nobody is mailed twice and a capped daily run can resume.
+    await sql`
+      CREATE TABLE IF NOT EXISTS notice_sends (
+        id SERIAL PRIMARY KEY,
+        member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+        campaign VARCHAR(60) NOT NULL,
+        version VARCHAR(20) NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'queued',
+        error TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        sent_at TIMESTAMPTZ,
+        UNIQUE (member_id, campaign)
+      )
+    `
+    await sql`CREATE INDEX IF NOT EXISTS idx_notice_sends_status ON notice_sends (status, created_at)`
+
     // One-time seed. Members marked 'full' before dues were tracked are credited
     // with dues year 2025, the partial year between launch and the first Oct 1
     // collection, so they keep benefits until Jan 1 2027 and then owe 2026 like

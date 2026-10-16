@@ -3,6 +3,7 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import { LanguageProvider } from './components/LanguageProvider'
 import SessionProvider from './components/SessionProvider'
+import DuesNotice from './components/DuesNotice'
 
 const siteUrl = 'https://www.utkorea.org'
 
@@ -74,6 +75,7 @@ export default function RootLayout({ children }) {
               {children}
             </main>
             <Footer />
+            <DuesNotice />
           </LanguageProvider>
         </SessionProvider>
       </body>

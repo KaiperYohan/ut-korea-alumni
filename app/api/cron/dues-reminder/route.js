@@ -1,80 +1,39 @@
-import { sql } from '@/lib/db'
-import { sendDuesReminderEmail } from '@/lib/email'
-import { currentDuesYear, duesDeadline, duesLapseDate, DUES_AMOUNT_KRW } from '@/lib/dues'
-import { isActiveMember } from '@/lib/memberStatus'
+import { currentDuesYear } from '@/lib/dues'
+import { campaignsFor, enqueueCampaign, deliverQueued, noticeAudience } from '@/lib/duesNotices'
 
-// December reminder to members with no payment recorded for the open dues year.
-// Scheduled daily; it only acts during the reminder window, so the schedule can
-// stay simple and the window is defined here in one place.
-const REMINDER_DAYS = [1, 15, 28] // December days on which it sends
-
+// Daily (10:00 KST). On campaign days it queues end-of-year dues notices — both
+// versions on Oct 1, renewal reminders on Dec 1, 15 and 28 — and every day it
+// sends what is queued, within the daily email cap, so a large campaign finishes
+// over a few days instead of hitting the provider's limit.
+//
+// ?dryRun=true reports today's campaigns and audience without writing or sending.
 export async function GET(request) {
-  const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (request.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  const dryRun = new URL(request.url).searchParams.get('dryRun') === 'true'
 
-  const { searchParams } = new URL(request.url)
-  const force = searchParams.get('force') === 'true'
-  const dryRun = searchParams.get('dryRun') === 'true'
-
-  // Evaluated in KST, matching the dues year boundary.
-  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000)
+  const kst = new Date(Date.now() + 9 * 3600e3)
   const month = kst.getUTCMonth() + 1
   const day = kst.getUTCDate()
-
-  if (!force && !(month === 12 && REMINDER_DAYS.includes(day))) {
-    return Response.json({ success: true, skipped: true, reason: `Not a reminder day (KST ${month}/${day})` })
-  }
-
   const duesYear = currentDuesYear()
+  const campaigns = campaignsFor(month, day, duesYear)
 
   try {
-    // Members with no payment for the open dues year. Status decides who is
-    // chased: resigned, expelled and deceased members are never mailed.
-    const { rows } = await sql`
-      SELECT m.id, m.name, m.name_ko, m.email, m.status, m.is_approved, m.membership_level
-      FROM members m
-      WHERE m.email IS NOT NULL AND m.email <> ''
-        AND NOT EXISTS (
-          SELECT 1 FROM dues_payments d
-          WHERE d.member_id = m.id AND d.dues_year = ${duesYear}
-        )
-      ORDER BY m.name
-    `
-    const recipients = rows.filter(m => isActiveMember(m.status, m.is_approved))
-
     if (dryRun) {
+      const audience = await noticeAudience()
       return Response.json({
-        success: true,
-        dryRun: true,
-        duesYear,
-        wouldSend: recipients.length,
-        sample: recipients.slice(0, 10).map(m => ({ name: m.name, email: m.email })),
+        dryRun: true, kstDate: `${month}/${day}`, duesYear,
+        campaignsToday: campaigns.map(c => c.key),
+        audience: { renewal: audience.renewal.length, benefits: audience.benefits.length },
       })
     }
-
-    let sent = 0
-    const failed = []
-    for (const member of recipients) {
-      try {
-        await sendDuesReminderEmail(member.email, member.name || member.name_ko || 'there', {
-          duesYear,
-          amount: DUES_AMOUNT_KRW,
-          deadline: duesDeadline(duesYear),
-          lapseDate: duesLapseDate(duesYear),
-        })
-        sent++
-      } catch (error) {
-        // One bad address must not abort the run.
-        console.error(`Dues reminder failed for ${member.email}:`, error.message)
-        failed.push(member.email)
-      }
-    }
-
-    return Response.json({ success: true, duesYear, candidates: recipients.length, sent, failed: failed.length })
+    const queued = []
+    for (const c of campaigns) queued.push(await enqueueCampaign(c.key, c.versions))
+    const delivery = await deliverQueued()
+    return Response.json({ success: true, kstDate: `${month}/${day}`, queued, delivery })
   } catch (error) {
-    console.error('Dues reminder error:', error)
+    console.error('Dues notice cron error:', error)
     return Response.json({ error: error.message }, { status: 500 })
   }
 }
