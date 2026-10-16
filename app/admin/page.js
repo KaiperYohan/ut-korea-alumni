@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useT } from '../components/LanguageProvider'
 import { COMMITTEES, buildOrgSlots } from '@/lib/committees'
 import MemberPicker, { sortMembers, matchesMember } from '../components/MemberPicker'
+import DuesBankImport from '../components/DuesBankImport'
 import { MEMBER_STATUSES, statusMeta } from '@/lib/memberStatus'
 import { currentDuesYear, duesYearLabel, duesDeadline, duesLapseDate, selectableDuesYears, isDuesCurrent, paidThrough, formatKrw, duesRateSettingKey, DUES_RATE_TIERS, DUES_AMOUNT_KRW } from '@/lib/dues'
 
@@ -622,6 +623,7 @@ ${next.description}`)) return
           const isOpenYear = duesYear === dues?.currentDuesYear
           return (
             <div className="space-y-4">
+              <DuesBankImport members={approvedMemberList} onRecorded={() => fetchDues()} />
               <div className="card p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                   <div>

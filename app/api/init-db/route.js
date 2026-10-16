@@ -223,6 +223,32 @@ export async function GET(request) {
     `
     await sql`CREATE INDEX IF NOT EXISTS idx_dues_member_year ON dues_payments (member_id, dues_year)`
 
+    // Deposits read from Toss 모임통장 statements (see lib/depositImport). One row
+    // per bank transaction, keyed by fingerprint, so re-uploading a statement never
+    // records a payment twice. Only 50,000원 deposits in the open dues year are kept.
+    await sql`
+      CREATE TABLE IF NOT EXISTS bank_deposits (
+        id SERIAL PRIMARY KEY,
+        fingerprint TEXT UNIQUE NOT NULL,
+        occurred_at TIMESTAMPTZ NOT NULL,
+        amount INTEGER NOT NULL,
+        balance_after BIGINT,
+        memo TEXT,
+        dues_year INTEGER,
+        status VARCHAR(20) NOT NULL,
+        reason TEXT,
+        suggested_member_id INTEGER REFERENCES members(id) ON DELETE SET NULL,
+        member_id INTEGER REFERENCES members(id) ON DELETE SET NULL,
+        payment_id INTEGER REFERENCES dues_payments(id) ON DELETE SET NULL,
+        no_account BOOLEAN DEFAULT false,
+        imported_by INTEGER REFERENCES members(id) ON DELETE SET NULL,
+        decided_by INTEGER REFERENCES members(id) ON DELETE SET NULL,
+        decided_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `
+    await sql`CREATE INDEX IF NOT EXISTS idx_bank_deposits_status ON bank_deposits (status)`
+
     // One-time seed. Members marked 'full' before dues were tracked are credited
     // with dues year 2025, the partial year between launch and the first Oct 1
     // collection, so they keep benefits until Jan 1 2027 and then owe 2026 like
