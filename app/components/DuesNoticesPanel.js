@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import DuesNoticeEditor from './DuesNoticeEditor'
 
 // Dues tab panel for the end-of-year notices: who gets which version, how each
 // campaign is going, a test send to yourself, and a manual send of the opening
@@ -89,6 +90,8 @@ export default function DuesNoticesPanel() {
           ))}
         </div>
       )}
+
+      <DuesNoticeEditor />
     </div>
   )
 }

@@ -1,8 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { currentDuesYear, duesDeadline, duesLapseDate, paidThrough } from '@/lib/dues'
-import { readDuesRates } from '@/lib/duesRecord'
-import { noticeAudience, enqueueCampaign, deliverQueued, noticeStats, DAILY_CAP } from '@/lib/duesNotices'
+import { currentDuesYear } from '@/lib/dues'
+import { noticeAudience, enqueueCampaign, deliverQueued, noticeStats, emailContext, readNoticeTemplates, DAILY_CAP } from '@/lib/duesNotices'
 import { sendDuesNoticeEmail } from '@/lib/email'
 
 async function requireAdmin() {
@@ -36,11 +35,12 @@ export async function POST(request) {
 
   try {
     if (action === 'test') {
-      const rates = await readDuesRates()
-      const ctx = { duesYear, amount: rates.general, deadline: duesDeadline(duesYear), lapseDate: duesLapseDate(duesYear), paidThrough: paidThrough(duesYear) }
+      // The saved wording, so a test shows exactly what members would receive.
+      const ctx = await emailContext(duesYear)
+      const templates = await readNoticeTemplates()
       const name = session.user.nameKo || session.user.name || ''
       for (const version of ['renewal', 'benefits']) {
-        await sendDuesNoticeEmail(session.user.email, name, { version, ...ctx })
+        await sendDuesNoticeEmail(session.user.email, name, { version, template: templates[version], ...ctx })
       }
       return Response.json({ sentTo: session.user.email, versions: ['renewal', 'benefits'] })
     }

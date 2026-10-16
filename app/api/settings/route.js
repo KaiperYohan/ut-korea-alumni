@@ -1,5 +1,6 @@
 import { sql } from '@/lib/db'
 import { DUES_RATE_PREFIX, duesRateSettingKey } from '@/lib/dues'
+import { NOTICE_SETTING_PREFIX } from '@/lib/duesNoticeTemplate'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,7 +11,10 @@ export const dynamic = 'force-dynamic'
 // signed-in member gets their own amount from /api/dues/me.
 const PUBLIC_DUES_RATE_KEY = duesRateSettingKey('general')
 
+// Email wording for the dues notices is admin-only as well: drafts in progress
+// have no reason to be readable by anyone on the internet.
 function isPublic(key) {
+  if (key.startsWith(NOTICE_SETTING_PREFIX)) return false
   return !key.startsWith(DUES_RATE_PREFIX) || key === PUBLIC_DUES_RATE_KEY
 }
 

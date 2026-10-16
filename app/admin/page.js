@@ -8,6 +8,7 @@ import { COMMITTEES, buildOrgSlots } from '@/lib/committees'
 import MemberPicker, { sortMembers, matchesMember } from '../components/MemberPicker'
 import DuesBankImport from '../components/DuesBankImport'
 import DuesNoticesPanel from '../components/DuesNoticesPanel'
+import { NOTICE_SETTING_PREFIX } from '@/lib/duesNoticeTemplate'
 import { MEMBER_STATUSES, statusMeta } from '@/lib/memberStatus'
 import { currentDuesYear, duesYearLabel, duesDeadline, duesLapseDate, selectableDuesYears, isDuesCurrent, paidThrough, formatKrw, duesRateSettingKey, DUES_RATE_TIERS, DUES_AMOUNT_KRW } from '@/lib/dues'
 
@@ -546,7 +547,9 @@ ${next.description}`)) return
     await fetch('/api/admin/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ settings: siteSettings }),
+      // Email wording is edited in the Dues tab and saved from there. Sending the copy
+      // loaded with this page would overwrite those edits with stale text.
+      body: JSON.stringify({ settings: Object.fromEntries(Object.entries(siteSettings).filter(([k]) => !k.startsWith(NOTICE_SETTING_PREFIX))) }),
     })
     // Dues rates live in these settings, and the Dues tab caches amounts computed
     // from them. Drop that copy so the next visit shows the rates just saved.
