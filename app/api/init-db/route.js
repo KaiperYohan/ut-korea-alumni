@@ -180,6 +180,9 @@ export async function GET(request) {
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS verification_token_expires TIMESTAMP`
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS membership_level VARCHAR(20) DEFAULT 'general'`
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS birthday VARCHAR(6)`
+    // Visitors (membership_level 'visitor'): their home school and how long they are here.
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS visitor_school VARCHAR(200)`
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS visit_period VARCHAR(100)`
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS phone VARCHAR(20)`
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS linkedin VARCHAR(255)`
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS instagram VARCHAR(255)`

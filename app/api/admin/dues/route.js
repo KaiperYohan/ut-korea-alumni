@@ -54,10 +54,10 @@ export async function GET(request) {
     // Only members who are actually part of the association are billable, so
     // resigned, expelled and deceased members are not chased for dues. Executives
     // are billable like anyone else — they are expected to pay, their benefits
-    // just never depend on having done so.
+    // just never depend on having done so. Visitors are not alumni and pay nothing.
     const rates = await readDuesRates()
     const billable = members
-      .filter(m => isActiveMember(m.status, m.is_approved))
+      .filter(m => isActiveMember(m.status, m.is_approved) && m.membership_level !== 'visitor')
       .map(m => ({
         ...m,
         roles: m.roles || [],

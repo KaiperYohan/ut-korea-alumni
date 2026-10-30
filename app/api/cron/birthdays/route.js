@@ -20,6 +20,7 @@ export async function GET(request) {
       SELECT id, name, name_ko, graduation_year, birthday
       FROM members
       WHERE is_approved = true
+        AND COALESCE(membership_level, 'general') <> 'visitor'
         AND birthday IS NOT NULL
         AND LENGTH(birthday) = 6
         AND SUBSTRING(birthday FROM 3 FOR 4) = ${todayMMDD}

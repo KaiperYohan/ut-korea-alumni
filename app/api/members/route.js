@@ -30,6 +30,7 @@ export async function GET(request) {
              (SELECT MAX(d.dues_year) FROM dues_payments d WHERE d.member_id = members.id) AS dues_year_paid
       FROM members
       WHERE is_approved = true
+        AND COALESCE(membership_level, 'general') <> 'visitor'
         AND (${!search} OR name ILIKE ${searchLike} OR name_ko ILIKE ${searchLike} OR major ILIKE ${searchLike} OR company ILIKE ${searchLike})
         AND (${!year} OR graduation_year = ${year ? parseInt(year) : 0})
         AND (${!location} OR location ILIKE ${`%${location}%`})
@@ -42,6 +43,7 @@ export async function GET(request) {
              (SELECT MAX(d.dues_year) FROM dues_payments d WHERE d.member_id = members.id) AS dues_year_paid
       FROM members
       WHERE is_approved = true
+        AND COALESCE(membership_level, 'general') <> 'visitor'
       ORDER BY graduation_year DESC NULLS LAST, name ASC
     `
   }

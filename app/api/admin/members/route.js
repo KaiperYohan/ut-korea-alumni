@@ -19,7 +19,7 @@ export async function GET() {
     ({ rows } = await sql`
       SELECT m.id, m.email, m.name, m.name_ko, m.graduation_year, m.major, m.location,
              m.company, m.title, m.is_admin, m.is_approved, m.status, m.membership_level,
-             m.created_at, m.last_login,
+             m.visitor_school, m.visit_period, m.created_at, m.last_login,
              (SELECT MAX(d.dues_year) FROM dues_payments d WHERE d.member_id = m.id) AS dues_year_paid
       FROM members m
       ORDER BY m.created_at DESC
@@ -48,8 +48,9 @@ export async function PUT(request) {
 
   if (action === 'set_level') {
     // 'full' is no longer a level — full-member benefits are derived from the dues
-    // ledger, so setting it here would write a value nothing reads.
-    const validLevels = ['general', 'executive']
+    // ledger, so setting it here would write a value nothing reads. 'visitor' marks
+    // a visiting student or scholar who is not an alumnus.
+    const validLevels = ['general', 'executive', 'visitor']
     if (!validLevels.includes(level)) {
       return Response.json({ error: 'Invalid membership level' }, { status: 400 })
     }

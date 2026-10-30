@@ -114,7 +114,8 @@
     "class": "졸업",
     "location": "지역",
     "company": "직장",
-    "noAccess": "회원 명부는 정회원 또는 임원만 열람할 수 있습니다."
+    "noAccess": "회원 명부는 정회원 또는 임원만 열람할 수 있습니다.",
+    "visitorNoAccess": "동문 명부는 UT Austin 동문 전용입니다. 방문자도 행사 참여와 소식 열람은 가능합니다."
   },
   "memberDetail": {
     "phone": "전화번호",
@@ -157,7 +158,13 @@
       "privacyRequired": "개인정보 수집 및 이용에 동의해야 가입할 수 있습니다.",
       "emailNotVerified": "로그인하기 전에 이메일을 인증해 주세요. 받은 편지함에서 인증 링크를 확인하세요.",
       "accountInactive": "비활성화된 계정입니다. 오류라고 생각되시면 동문회로 문의해 주세요."
-    }
+    },
+    "visitorToggle": "UT Austin 졸업생이 아닌 방문 학생 / 방문 학자입니다",
+    "visitorHint": "방문자는 행사 참여와 소식 열람이 가능합니다. 동문 명부와 회비는 UT Austin 동문 전용입니다.",
+    "visitorSchool": "소속 학교 / 기관",
+    "visitorSchoolPlaceholder": "서울대학교",
+    "visitPeriod": "방문 기간",
+    "visitPeriodPlaceholder": "2026년 가을 – 2027년 봄"
   },
   "verify": {
     "verifying": "이메일 인증 중...",
@@ -214,7 +221,9 @@
     "statusYearLabel": "회비 연도",
     "statusDeadlineLabel": "납부 기한",
     "statusThroughLabel": "혜택 유효 기간",
-    "statusRecordedNote": "이미 납부하셨나요? 반영까지 며칠이 걸릴 수 있습니다."
+    "statusRecordedNote": "이미 납부하셨나요? 반영까지 며칠이 걸릴 수 있습니다.",
+    "statusVisitorTitle": "방문자로 등록되어 있습니다",
+    "statusVisitorBody": "회비는 UT Austin 동문 대상이므로 납부하실 필요가 없습니다. 행사에는 자유롭게 참여하실 수 있습니다."
   },
   "membership": {
     "level": "회원 등급",

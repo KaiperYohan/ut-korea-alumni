@@ -12,7 +12,8 @@ export default function SignupPage() {
     email: '', password: '', confirmPassword: '',
     name: '', nameKo: '', graduationYear: '', major: '',
     phone: '', location: '', company: '', title: '', birthday: '', bio: '',
-    privacyConsent: false, marketingConsent: false
+    privacyConsent: false, marketingConsent: false,
+    isVisitor: false, visitorSchool: '', visitPeriod: '',
   })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -25,6 +26,10 @@ export default function SignupPage() {
     setError('')
 
     if (!form.email || !form.password || !form.name || !form.phone) {
+      setError(t('auth.errors.required'))
+      return
+    }
+    if (form.isVisitor && !form.visitorSchool.trim()) {
       setError(t('auth.errors.required'))
       return
     }
@@ -142,16 +147,44 @@ export default function SignupPage() {
           <hr className="border-charcoal/10" />
           <p className="text-xs text-charcoal-light uppercase tracking-wider font-semibold">Profile Information</p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-charcoal mb-1.5">{t('auth.gradYear')}</label>
-              <input type="number" value={form.graduationYear} onChange={update('graduationYear')} className={inputClass} placeholder="2020" min="1950" max="2030" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-charcoal mb-1.5">{t('auth.major')}</label>
-              <input type="text" value={form.major} onChange={update('major')} className={inputClass} placeholder="Computer Science" />
-            </div>
+          {/* Visiting students and scholars are not alumni: they give their home
+              school instead of a graduation year, and sign up as visitors. */}
+          <div className={`rounded-lg border p-3 transition-colors ${form.isVisitor ? 'border-sky-300 bg-sky-50/60' : 'border-charcoal/10'}`}>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.isVisitor}
+                onChange={(e) => setForm(prev => ({ ...prev, isVisitor: e.target.checked }))}
+                className="mt-0.5 w-4 h-4 rounded border-charcoal/30 text-burnt-orange focus:ring-burnt-orange/30"
+              />
+              <span className="text-sm text-charcoal">{t('auth.visitorToggle')}</span>
+            </label>
+            {form.isVisitor && <p className="text-xs text-charcoal-light mt-2 ml-7">{t('auth.visitorHint')}</p>}
           </div>
+
+          {form.isVisitor ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-charcoal mb-1.5">{t('auth.visitorSchool')} *</label>
+                <input type="text" value={form.visitorSchool} onChange={update('visitorSchool')} required maxLength={200} className={inputClass} placeholder={t('auth.visitorSchoolPlaceholder')} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-charcoal mb-1.5">{t('auth.visitPeriod')}</label>
+                <input type="text" value={form.visitPeriod} onChange={update('visitPeriod')} maxLength={100} className={inputClass} placeholder={t('auth.visitPeriodPlaceholder')} />
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-charcoal mb-1.5">{t('auth.gradYear')}</label>
+                <input type="number" value={form.graduationYear} onChange={update('graduationYear')} className={inputClass} placeholder="2020" min="1950" max="2030" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-charcoal mb-1.5">{t('auth.major')}</label>
+                <input type="text" value={form.major} onChange={update('major')} className={inputClass} placeholder="Computer Science" />
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

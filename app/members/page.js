@@ -127,7 +127,7 @@ export default function MembersPage() {
         <div className="max-w-2xl mx-auto text-center">
           <div className="card p-12">
             <h1 className="font-display text-2xl font-bold text-charcoal mb-3">{t('members.title')}</h1>
-            <p className="text-charcoal-light">{t('members.noAccess')}</p>
+            <p className="text-charcoal-light">{t(session?.user?.membershipLevel === 'visitor' ? 'members.visitorNoAccess' : 'members.noAccess')}</p>
           </div>
         </div>
       </div>

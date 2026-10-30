@@ -114,7 +114,8 @@
     "class": "Class of",
     "location": "Location",
     "company": "Company",
-    "noAccess": "Directory access requires Full or Executive membership."
+    "noAccess": "Directory access requires Full or Executive membership.",
+    "visitorNoAccess": "The alumni directory is for UT Austin alumni. As a visitor you can still join events and read news."
   },
   "memberDetail": {
     "phone": "Phone",
@@ -157,7 +158,13 @@
       "privacyRequired": "You must agree to the collection of personal information to sign up.",
       "emailNotVerified": "Please verify your email before signing in. Check your inbox for the verification link.",
       "accountInactive": "This account is no longer active. Please contact the association if you believe this is a mistake."
-    }
+    },
+    "visitorToggle": "I'm a visiting student or scholar, not a UT Austin graduate",
+    "visitorHint": "Visitors can join events and read news. The alumni directory and membership dues are for UT Austin alumni only.",
+    "visitorSchool": "School / Institution",
+    "visitorSchoolPlaceholder": "Seoul National University",
+    "visitPeriod": "Visit period",
+    "visitPeriodPlaceholder": "Fall 2026 – Spring 2027"
   },
   "verify": {
     "verifying": "Verifying your email...",
@@ -214,7 +221,9 @@
     "statusYearLabel": "Dues year",
     "statusDeadlineLabel": "Pay by",
     "statusThroughLabel": "Benefits through",
-    "statusRecordedNote": "Already paid? It can take a few days to be recorded."
+    "statusRecordedNote": "Already paid? It can take a few days to be recorded.",
+    "statusVisitorTitle": "You're registered as a visitor",
+    "statusVisitorBody": "Dues are for UT Austin alumni, so there is nothing for you to pay. You can still join our events."
   },
   "membership": {
     "level": "Membership",

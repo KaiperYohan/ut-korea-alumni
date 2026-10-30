@@ -21,7 +21,7 @@ export async function GET(request, { params }) {
            linkedin, instagram, tiktok, youtube, twitter, interests, profile_image_url, membership_level,
              (SELECT MAX(d.dues_year) FROM dues_payments d WHERE d.member_id = members.id) AS dues_year_paid
     FROM members
-    WHERE id = ${id} AND is_approved = true
+    WHERE id = ${id} AND is_approved = true AND COALESCE(membership_level, 'general') <> 'visitor'
   `
 
   if (!rows.length) {

@@ -48,7 +48,13 @@ export default function DuesPage() {
       ? formatKrw(generalRate)
       : t('dues.amountValue')
 
-  const statusCard = !duesInfo ? null : isExecutive ? {
+  // Visitors are not alumni and are never billed.
+  const statusCard = !duesInfo ? null : duesInfo.membershipLevel === 'visitor' ? {
+    tone: 'border-sky-200 bg-sky-50/40',
+    title: t('dues.statusVisitorTitle'),
+    body: t('dues.statusVisitorBody'),
+    rows: [],
+  } : isExecutive ? {
     tone: 'border-purple-200 bg-purple-50/40',
     title: t('dues.statusExecTitle'),
     body: t('dues.statusExecBody'),

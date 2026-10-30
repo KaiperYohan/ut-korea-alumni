@@ -34,7 +34,8 @@ export default function AdminPage() {
   const [teamMemberQuery, setTeamMemberQuery] = useState({})
   // Members offered by every member picker. Memoized so the ~40 org chart pickers
   // share one list instead of re-filtering on every render.
-  const approvedMemberList = useMemo(() => members.filter(m => m.is_approved), [members])
+  // Org chart, teams and past presidents are alumni roles, so visitors are not offered.
+  const approvedMemberList = useMemo(() => members.filter(m => m.is_approved && m.membership_level !== 'visitor'), [members])
   const [newTeamName, setNewTeamName] = useState('')
   const [memberSearch, setMemberSearch] = useState('')
   const [siteSettings, setSiteSettings] = useState({ stat_members: '150+', stat_events: '50+', stat_years: '15+', notice: '', notice_ko: '', greeting_president: '', greeting_president_ko: '' })
@@ -566,9 +567,11 @@ ${next.description}`)) return
   const pendingCount = members.filter(m => statusMeta(m.status, m.is_approved).value === 'pending').length
   const executiveCount = members.filter(m => m.membership_level === 'executive').length
   // Full is derived from the dues ledger now, not stored, so this counts members
-  // whose dues are current. Executives are counted separately above.
-  const fullCount = members.filter(m => m.membership_level !== 'executive' && isDuesCurrent(m.dues_year_paid)).length
-  const generalCount = members.filter(m => m.membership_level !== 'executive' && !isDuesCurrent(m.dues_year_paid)).length
+  // whose dues are current. Executives and visitors are counted separately.
+  const alumniNonExec = members.filter(m => m.membership_level !== 'executive' && m.membership_level !== 'visitor')
+  const fullCount = alumniNonExec.filter(m => isDuesCurrent(m.dues_year_paid)).length
+  const generalCount = alumniNonExec.filter(m => !isDuesCurrent(m.dues_year_paid)).length
+  const visitorCount = members.filter(m => m.membership_level === 'visitor').length
   const inputClass = "w-full px-3 py-2 rounded-lg border border-charcoal/15 bg-white text-charcoal text-sm focus:outline-none focus:ring-2 focus:ring-burnt-orange/30 focus:border-burnt-orange"
 
   const pendingSubmissions = submissions.length
@@ -827,7 +830,7 @@ ${next.description}`)) return
           const q = memberSearch.trim().toLowerCase()
           const filteredMembers = q
             ? members.filter(m => {
-                const fields = [m.name, m.name_ko, m.email, m.company, m.title, m.major, m.location, String(m.graduation_year || '')]
+                const fields = [m.name, m.name_ko, m.email, m.company, m.title, m.major, m.location, m.visitor_school, String(m.graduation_year || ''), m.membership_level === 'visitor' ? 'visitor' : '']
                 return fields.some(f => f && String(f).toLowerCase().includes(q))
               })
             : members
@@ -857,8 +860,8 @@ ${next.description}`)) return
                 }
                 const rows = members.map(m => [
                   m.name, m.name_ko, m.email, m.graduation_year, m.major, m.location, m.company, m.title,
-                  m.membership_level === 'executive' ? 'executive' : 'general',
-                  (m.membership_level === 'executive' || isDuesCurrent(m.dues_year_paid)) ? 'Yes' : 'No',
+                  m.membership_level === 'executive' || m.membership_level === 'visitor' ? m.membership_level : 'general',
+                  m.membership_level === 'visitor' ? 'No' : (m.membership_level === 'executive' || isDuesCurrent(m.dues_year_paid)) ? 'Yes' : 'No',
                   m.dues_year_paid ? duesYearLabel(m.dues_year_paid) : '',
                   statusMeta(m.status, m.is_approved).label, m.is_admin ? 'Yes' : 'No',
                   m.created_at ? new Date(m.created_at).toLocaleDateString() : ''
@@ -884,7 +887,8 @@ ${next.description}`)) return
               // Same check the server enforces, so the badge cannot disagree with
               // whether the member actually has directory access.
               const isExec = member.membership_level === 'executive'
-              const duesCurrent = isDuesCurrent(member.dues_year_paid)
+              const isVisitor = member.membership_level === 'visitor'
+              const duesCurrent = !isVisitor && isDuesCurrent(member.dues_year_paid)
               const isFull = isExec || duesCurrent
               return (
               <div key={member.id} className={`card p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${st.value === 'pending' ? 'border-amber-300 bg-amber-50/30' : ''}${!st.active && st.value !== 'pending' ? 'border-red-200 bg-red-50/20' : ''}`}>
@@ -905,17 +909,21 @@ ${next.description}`)) return
                       </span>
                     )}
                     <span className={`text-[0.6rem] font-bold px-1.5 py-0.5 rounded uppercase ${
-                      isExec ? 'bg-purple-100 text-purple-800' : 'bg-charcoal/10 text-charcoal-light'
+                      isExec ? 'bg-purple-100 text-purple-800' : isVisitor ? 'bg-sky-100 text-sky-800' : 'bg-charcoal/10 text-charcoal-light'
                     }`}>
-                      {isExec ? 'executive' : 'general'}
+                      {isExec ? 'executive' : isVisitor ? 'visitor' : 'general'}
                     </span>
                   </div>
                   <div className="text-xs text-charcoal-light mt-0.5">
-                    {member.email} · {member.graduation_year ? `Class of ${member.graduation_year}` : 'No year'} · {member.major || 'No major'}
+                    {member.email} · {isVisitor
+                      ? <>Visiting from {member.visitor_school || '—'}{member.visit_period && ` (${member.visit_period})`}</>
+                      : <>{member.graduation_year ? `Class of ${member.graduation_year}` : 'No year'} · {member.major || 'No major'}</>}
                     {member.company && ` · ${member.company}`}
                   </div>
                   <div className="text-xs mt-0.5">
-                    {duesCurrent ? (
+                    {isVisitor ? (
+                      <span className="text-charcoal-light">Visitor — not alumni, no dues, not in the directory</span>
+                    ) : duesCurrent ? (
                       <span className="text-green-700 font-medium">
                         Dues {duesYearLabel(member.dues_year_paid)} · benefits through {paidThrough(member.dues_year_paid)}
                       </span>
@@ -936,6 +944,7 @@ ${next.description}`)) return
                   >
                     <option value="general">General</option>
                     <option value="executive">Executive</option>
+                    <option value="visitor">Visitor</option>
                   </select>
                   <select
                     value={st.value}
@@ -1424,7 +1433,7 @@ ${next.description}`)) return
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-3 gap-5">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
               <div className="card p-5 text-center">
                 <div className="font-display text-2xl font-bold text-purple-700">{executiveCount}</div>
                 <div className="text-sm text-charcoal-light mt-1">Executive</div>
@@ -1436,6 +1445,10 @@ ${next.description}`)) return
               <div className="card p-5 text-center">
                 <div className="font-display text-2xl font-bold text-charcoal-light">{generalCount}</div>
                 <div className="text-sm text-charcoal-light mt-1">General</div>
+              </div>
+              <div className="card p-5 text-center">
+                <div className="font-display text-2xl font-bold text-sky-700">{visitorCount}</div>
+                <div className="text-sm text-charcoal-light mt-1">Visitors</div>
               </div>
             </div>
 
@@ -1938,7 +1951,7 @@ ${next.description}`)) return
 
               <div className="space-y-6">
                 {teams.map(team => {
-                  const approvedMembers = members.filter(m => m.is_approved)
+                  const approvedMembers = approvedMemberList
                   return (
                     <div key={team.id} className="border border-charcoal/10 rounded-xl p-5">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">

@@ -69,7 +69,7 @@ export async function GET() {
     // Grouped by the tier members actually hold, not the raw membership_level
     // column: since full benefits moved to the dues ledger that column reads
     // 'general' for every paid member, so grouping on it made the Full row vanish.
-    // Mirrors lib/permissions memberTier — executive, else dues current, else general.
+    // Mirrors lib/permissions memberTier — visitor, executive, else dues current, else general.
     const requiredYear = requiredDuesYear()
     const membershipLevels = await safeQuery('membershipLevels', () => sql`
       SELECT tier AS level,
@@ -80,6 +80,7 @@ export async function GET() {
       FROM (
         SELECT m.*,
                CASE
+                 WHEN m.membership_level = 'visitor' THEN 'visitor'
                  WHEN m.membership_level = 'executive' THEN 'executive'
                  WHEN (SELECT MAX(d.dues_year) FROM dues_payments d WHERE d.member_id = m.id) >= ${requiredYear} THEN 'full'
                  ELSE 'general'
@@ -87,7 +88,7 @@ export async function GET() {
         FROM members m
       ) t
       GROUP BY tier
-      ORDER BY CASE tier WHEN 'executive' THEN 0 WHEN 'full' THEN 1 ELSE 2 END
+      ORDER BY CASE tier WHEN 'executive' THEN 0 WHEN 'full' THEN 1 WHEN 'general' THEN 2 ELSE 3 END
     `)
 
     const eventAttendance = await safeQuery('eventAttendance', () => sql`

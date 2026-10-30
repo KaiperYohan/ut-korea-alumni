@@ -7,10 +7,17 @@ import { validateBirthday } from '@/lib/birthday'
 export async function POST(request) {
   try {
     const body = await request.json()
-    const { email, password, name, nameKo, graduationYear, major, location, company, title, bio, birthday, phone, privacyConsent, marketingConsent } = body
+    const { email, password, name, nameKo, graduationYear, major, location, company, title, bio, birthday, phone, privacyConsent, marketingConsent, isVisitor, visitorSchool, visitPeriod } = body
 
     if (!email || !password || !name || !phone) {
       return Response.json({ error: 'Email, password, name, and phone are required' }, { status: 400 })
+    }
+
+    // Visiting students and scholars sign up as visitors: not alumni, so no
+    // graduation year, but their home school is asked for instead.
+    const visitor = Boolean(isVisitor)
+    if (visitor && !String(visitorSchool || '').trim()) {
+      return Response.json({ error: 'Please enter your school or institution' }, { status: 400 })
     }
 
     if (!privacyConsent) {
@@ -47,8 +54,8 @@ export async function POST(request) {
     // so an unreviewed signup was already public while the admin list called it
     // pending. Pending members can still sign in.
     const { rows } = await sql`
-      INSERT INTO members (email, password_hash, name, name_ko, graduation_year, major, location, company, title, bio, birthday, phone, is_approved, status, email_verified, verification_token, verification_token_expires, privacy_consent, privacy_consent_date, marketing_consent, marketing_consent_date)
-      VALUES (${normalizedEmail}, ${passwordHash}, ${String(name).trim()}, ${nameKo?.trim() || null}, ${graduationYear ? parseInt(graduationYear) : null}, ${major || null}, ${location || null}, ${company || null}, ${title || null}, ${bio || null}, ${birthdayCheck.value}, ${String(phone).trim()}, false, 'pending', false, ${verificationToken}, ${tokenExpires.toISOString()}, ${true}, ${now}, ${!!marketingConsent}, ${marketingConsent ? now : null})
+      INSERT INTO members (email, password_hash, name, name_ko, membership_level, visitor_school, visit_period, graduation_year, major, location, company, title, bio, birthday, phone, is_approved, status, email_verified, verification_token, verification_token_expires, privacy_consent, privacy_consent_date, marketing_consent, marketing_consent_date)
+      VALUES (${normalizedEmail}, ${passwordHash}, ${String(name).trim()}, ${nameKo?.trim() || null}, ${visitor ? 'visitor' : 'general'}, ${visitor ? String(visitorSchool).trim().slice(0, 200) : null}, ${visitor ? String(visitPeriod || '').trim().slice(0, 100) || null : null}, ${!visitor && graduationYear ? parseInt(graduationYear) : null}, ${major || null}, ${location || null}, ${company || null}, ${title || null}, ${bio || null}, ${birthdayCheck.value}, ${String(phone).trim()}, false, 'pending', false, ${verificationToken}, ${tokenExpires.toISOString()}, ${true}, ${now}, ${!!marketingConsent}, ${marketingConsent ? now : null})
       RETURNING id, email, name
     `
 
