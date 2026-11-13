@@ -40,7 +40,7 @@ export default function DuesNotice() {
     return () => { cancelled = true }
   }, [status])
 
-  if (!info || hidden || pathname?.startsWith('/dues') || pathname?.startsWith('/admin')) return null
+  if (!info || hidden || pathname?.startsWith('/dues') || pathname?.startsWith('/admin') || pathname?.startsWith('/promo')) return null
 
   const ko = locale === 'ko'
   const renewal = info.noticeVersion === 'renewal'

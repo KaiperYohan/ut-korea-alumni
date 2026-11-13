@@ -4,6 +4,7 @@ import Footer from './components/Footer'
 import { LanguageProvider } from './components/LanguageProvider'
 import SessionProvider from './components/SessionProvider'
 import DuesNotice from './components/DuesNotice'
+import PromoPopup from './components/PromoPopup'
 
 const siteUrl = 'https://www.utkorea.org'
 
@@ -76,6 +77,7 @@ export default function RootLayout({ children }) {
             </main>
             <Footer />
             <DuesNotice />
+            <PromoPopup />
           </LanguageProvider>
         </SessionProvider>
       </body>

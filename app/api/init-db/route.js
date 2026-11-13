@@ -269,6 +269,57 @@ export async function GET(request) {
     `
     await sql`CREATE INDEX IF NOT EXISTS idx_notice_sends_status ON notice_sends (status, created_at)`
 
+    // Promotions: time-limited campaigns shown as a home-page pop-up and/or the top
+    // bar, each with its own page (/promo/<slug>) and optionally an entry form.
+    await sql`
+      CREATE TABLE IF NOT EXISTS promotions (
+        id SERIAL PRIMARY KEY,
+        slug VARCHAR(80) UNIQUE NOT NULL,
+        title VARCHAR(200) NOT NULL DEFAULT '',
+        title_ko VARCHAR(200) NOT NULL DEFAULT '',
+        body TEXT NOT NULL DEFAULT '',
+        body_ko TEXT NOT NULL DEFAULT '',
+        image_url TEXT,
+        button_label VARCHAR(60) NOT NULL DEFAULT '',
+        button_label_ko VARCHAR(60) NOT NULL DEFAULT '',
+        button_url TEXT,
+        banner_text VARCHAR(200) NOT NULL DEFAULT '',
+        banner_text_ko VARCHAR(200) NOT NULL DEFAULT '',
+        starts_on DATE NOT NULL,
+        ends_on DATE NOT NULL,
+        audience VARCHAR(20) NOT NULL DEFAULT 'everyone',
+        show_popup BOOLEAN NOT NULL DEFAULT true,
+        show_banner BOOLEAN NOT NULL DEFAULT false,
+        enabled BOOLEAN NOT NULL DEFAULT true,
+        entry_form BOOLEAN NOT NULL DEFAULT false,
+        entry_screenshot BOOLEAN NOT NULL DEFAULT false,
+        entry_address BOOLEAN NOT NULL DEFAULT false,
+        entry_note TEXT NOT NULL DEFAULT '',
+        entry_note_ko TEXT NOT NULL DEFAULT '',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `
+    await sql`
+      CREATE TABLE IF NOT EXISTS promotion_entries (
+        id SERIAL PRIMARY KEY,
+        promotion_id INTEGER NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
+        member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+        screenshot_url TEXT,
+        recipient_name VARCHAR(100),
+        phone VARCHAR(30),
+        address TEXT,
+        note TEXT,
+        consent_at TIMESTAMPTZ,
+        status VARCHAR(20) NOT NULL DEFAULT 'submitted',
+        admin_note TEXT,
+        purged_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE (promotion_id, member_id)
+      )
+    `
+
     // One-time seed. Members marked 'full' before dues were tracked are credited
     // with dues year 2025, the partial year between launch and the first Oct 1
     // collection, so they keep benefits until Jan 1 2027 and then owe 2026 like

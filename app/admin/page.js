@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useT } from '../components/LanguageProvider'
 import { COMMITTEES, buildOrgSlots } from '@/lib/committees'
 import MemberPicker, { sortMembers, matchesMember } from '../components/MemberPicker'
+import PromotionsAdmin from '../components/PromotionsAdmin'
 import DuesBankImport from '../components/DuesBankImport'
 import DuesNoticesPanel from '../components/DuesNoticesPanel'
 import { NOTICE_SETTING_PREFIX } from '@/lib/duesNoticeTemplate'
@@ -582,6 +583,7 @@ ${next.description}`)) return
     { id: 'dues', label: 'Dues' },
     { id: 'submissions', label: `Submissions ${pendingSubmissions > 0 ? `(${pendingSubmissions})` : ''}` },
     { id: 'events', label: 'Events' },
+    { id: 'promotions', label: 'Promotions' },
     { id: 'news', label: 'News/SXSK' },
     { id: 'org', label: 'Organization' },
     { id: 'settings', label: 'Settings' },
@@ -974,6 +976,8 @@ ${next.description}`)) return
         })()}
 
         {/* Submissions Tab */}
+        {activeTab === 'promotions' && <PromotionsAdmin />}
+
         {activeTab === 'submissions' && (
           <div className="space-y-3">
             {submissions.length === 0 ? (

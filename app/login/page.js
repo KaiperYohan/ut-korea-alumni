@@ -36,7 +36,10 @@ export default function LoginPage() {
         setError(t('auth.errors.invalid'))
       }
     } else {
-      router.push('/members')
+      // Return to the page that sent the member here (e.g. a promotion's entry
+      // form), but only to a path on this site.
+      const next = new URLSearchParams(window.location.search).get('callbackUrl') || ''
+      router.push(next.startsWith('/') && !next.startsWith('//') ? next : '/members')
       router.refresh()
     }
   }
